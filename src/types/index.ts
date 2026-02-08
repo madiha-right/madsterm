@@ -44,3 +44,23 @@ export interface FileDiff {
   hunks: DiffHunk[];
   is_binary: boolean;
 }
+
+export interface SearchMatch {
+  lineNumber: number;
+  lineContent: string;
+  matchStart: number;
+  matchEnd: number;
+}
+
+export interface FileSearchResult {
+  path: string;
+  absolutePath: string;
+  matches: SearchMatch[];
+}
+
+export interface SearchResults {
+  files: FileSearchResult[];
+  totalMatches: number;
+  totalFiles: number;
+  truncated: boolean;
+}

@@ -6,6 +6,7 @@ import { readDirectory, getHomeDir, openFile } from "../../hooks/useFileExplorer
 import { useTabStore } from "../../stores/tabStore";
 import { useThemeStore } from "../../stores/themeStore";
 import { FileTree } from "./FileTree";
+import { SearchResultsPanel } from "./SearchResultsPanel";
 import { FileNode } from "../../types";
 
 // Reusable toolbar icon button with tooltip that doesn't get clipped
@@ -72,7 +73,6 @@ const ToolbarButton: React.FC<{
 
 export const FileExplorer: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
   const theme = useThemeStore((s) => s.theme);
   const {
     rootPath,
@@ -193,8 +193,12 @@ export const FileExplorer: React.FC = () => {
           flat.push({ node, depth: depth - 1 });
         }
       }
-      if (node.isDir && expandedPaths.has(node.path) && node.children) {
-        for (const child of node.children) {
+      // When searching, recurse into all directories regardless of expanded state
+      const shouldRecurse = searchQuery
+        ? node.isDir && node.children
+        : node.isDir && expandedPaths.has(node.path) && node.children;
+      if (shouldRecurse) {
+        for (const child of node.children!) {
           flatten(child, depth + 1);
         }
       }
@@ -250,20 +254,8 @@ export const FileExplorer: React.FC = () => {
   // Vim keybindings
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      if (isSearching) {
-        if (e.key === "Escape") {
-          setIsSearching(false);
-          setSearchQuery("");
-          containerRef.current?.focus();
-          return;
-        }
-        if (e.key === "Enter") {
-          setIsSearching(false);
-          containerRef.current?.focus();
-          return;
-        }
-        return;
-      }
+      // When in content search mode, let SearchResultsPanel handle its own keys
+      if (isSearching) return;
 
       // g -> wait for next key
       if (e.key === "g") {
@@ -328,7 +320,6 @@ export const FileExplorer: React.FC = () => {
         case "/":
           e.preventDefault();
           setIsSearching(true);
-          setTimeout(() => searchInputRef.current?.focus(), 0);
           break;
         case "G":
           e.preventDefault();
@@ -392,7 +383,7 @@ export const FileExplorer: React.FC = () => {
       >
         <ToolbarButton
           icon={<FolderTree size={14} />}
-          tooltip="Project explorer  \u2318B"
+          tooltip={"\u2318\u21E7E"}
           isActive={!isSearching}
           onClick={(e) => {
             e.stopPropagation();
@@ -405,18 +396,17 @@ export const FileExplorer: React.FC = () => {
         />
         <ToolbarButton
           icon={<Search size={14} />}
-          tooltip="Global search  /"
+          tooltip={"\u2318\u21E7F"}
           isActive={isSearching}
           onClick={(e) => {
             e.stopPropagation();
             setIsSearching(true);
-            setTimeout(() => searchInputRef.current?.focus(), 0);
           }}
         />
         <div style={{ flex: 1 }} />
         <ToolbarButton
           icon={<X size={14} />}
-          tooltip="Close  \u2318B"
+          tooltip={"\u2318\u21E7E"}
           onClick={(e) => {
             e.stopPropagation();
             toggleLeftPanel();
@@ -424,143 +414,100 @@ export const FileExplorer: React.FC = () => {
         />
       </div>
 
-      {/* Search bar — only visible when searching */}
-      {isSearching && (
-        <div style={{ padding: "6px 8px", borderBottom: `1px solid ${theme.border}` }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              padding: "4px 8px",
-              backgroundColor: theme.bg,
-              border: `1px solid ${theme.border}`,
-            }}
-          >
-            <Search size={12} color={theme.textMuted} style={{ flexShrink: 0 }} />
-            <input
-              ref={searchInputRef}
-              aria-label="Search files"
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Escape") {
-                  setSearchQuery("");
-                  setIsSearching(false);
-                  containerRef.current?.focus();
-                  e.stopPropagation();
+      {/* Content search panel — replaces tree when searching */}
+      {isSearching ? (
+        <SearchResultsPanel />
+      ) : (
+        <>
+          {/* Loading skeleton */}
+          {isLoading && !tree && (
+            <div style={{ padding: "8px 12px", display: "flex", flexDirection: "column", gap: 6 }}>
+              {Array.from({ length: 10 }).map((_, i) => (
+                <div
+                  key={i}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    paddingLeft: i % 3 === 0 ? 0 : 16,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 14,
+                      height: 14,
+                      backgroundColor: theme.bgActive,
+                      animation: "skeleton-pulse 1.2s ease-in-out infinite",
+                      animationDelay: `${i * 0.08}s`,
+                    }}
+                  />
+                  <div
+                    style={{
+                      height: 12,
+                      backgroundColor: theme.bgActive,
+                      width: `${45 + ((i * 17) % 40)}%`,
+                      animation: "skeleton-pulse 1.2s ease-in-out infinite",
+                      animationDelay: `${i * 0.08}s`,
+                    }}
+                  />
+                </div>
+              ))}
+              <style>{`
+                @keyframes skeleton-pulse {
+                  0%, 100% { opacity: 0.3; }
+                  50% { opacity: 0.7; }
                 }
-                if (e.key === "Enter") {
-                  setIsSearching(false);
-                  containerRef.current?.focus();
-                  e.stopPropagation();
-                }
-              }}
-              placeholder="Search files..."
-              style={{
-                width: "100%",
-                background: "transparent",
-                border: "none",
-                color: theme.text,
-                fontSize: 12,
-                fontFamily: "inherit",
-                outline: "none",
-                padding: 0,
-                lineHeight: "18px",
-              }}
-            />
-          </div>
-          {searchQuery && (
-            <div
-              style={{
-                fontSize: 10,
-                color: theme.textMuted,
-                paddingTop: 3,
-                paddingLeft: 2,
-              }}
-            >
-              {flatList.length} match{flatList.length !== 1 ? "es" : ""}
+              `}</style>
             </div>
           )}
-        </div>
-      )}
 
-      {/* Loading skeleton */}
-      {isLoading && !tree && (
-        <div style={{ padding: "8px 12px", display: "flex", flexDirection: "column", gap: 6 }}>
-          {Array.from({ length: 10 }).map((_, i) => (
+          {/* Error display */}
+          {loadError && (
             <div
-              key={i}
               style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                paddingLeft: i % 3 === 0 ? 0 : 16,
+                padding: "8px 12px",
+                color: "#ff6b6b",
+                fontSize: 11,
+                wordBreak: "break-all",
               }}
             >
-              <div
-                style={{
-                  width: 14,
-                  height: 14,
-                  backgroundColor: theme.bgActive,
-                  animation: "skeleton-pulse 1.2s ease-in-out infinite",
-                  animationDelay: `${i * 0.08}s`,
-                }}
-              />
-              <div
-                style={{
-                  height: 12,
-                  backgroundColor: theme.bgActive,
-                  width: `${45 + ((i * 17) % 40)}%`,
-                  animation: "skeleton-pulse 1.2s ease-in-out infinite",
-                  animationDelay: `${i * 0.08}s`,
+              Error: {loadError}
+            </div>
+          )}
+
+          {/* Empty state */}
+          {tree && flatList.length === 0 && !isLoading && (
+            <div
+              style={{ padding: "12px", textAlign: "center", color: theme.textMuted, fontSize: 12 }}
+            >
+              Empty directory
+            </div>
+          )}
+
+          {/* Tree */}
+          {!(isLoading && !tree) && (
+            <div
+              style={{
+                flex: 1,
+                overflow: focusedPanel === "explorer" ? "auto" : "hidden",
+                padding: "4px 0",
+              }}
+            >
+              <FileTree
+                items={flatList}
+                focusedIndex={focusedIndex}
+                expandedPaths={expandedPaths}
+                onItemClick={(index) => {
+                  setFocusedIndex(index);
+                  const item = flatList[index];
+                  if (item) {
+                    handleFileOpen(item.node);
+                  }
                 }}
               />
             </div>
-          ))}
-          <style>{`
-            @keyframes skeleton-pulse {
-              0%, 100% { opacity: 0.3; }
-              50% { opacity: 0.7; }
-            }
-          `}</style>
-        </div>
-      )}
-
-      {/* Error display */}
-      {loadError && (
-        <div
-          style={{ padding: "8px 12px", color: "#ff6b6b", fontSize: 11, wordBreak: "break-all" }}
-        >
-          Error: {loadError}
-        </div>
-      )}
-
-      {/* Empty state */}
-      {tree && flatList.length === 0 && !isLoading && (
-        <div style={{ padding: "12px", textAlign: "center", color: theme.textMuted, fontSize: 12 }}>
-          {searchQuery ? "No matching files" : "Empty directory"}
-        </div>
-      )}
-
-      {/* Tree */}
-      {!(isLoading && !tree) && (
-        <div style={{ flex: 1, overflow: "auto", padding: "4px 0" }}>
-          <FileTree
-            items={flatList}
-            focusedIndex={focusedIndex}
-            expandedPaths={expandedPaths}
-            onItemClick={(index) => {
-              setFocusedIndex(index);
-              const item = flatList[index];
-              if (item) {
-                handleFileOpen(item.node);
-              }
-            }}
-          />
-        </div>
+          )}
+        </>
       )}
     </div>
   );

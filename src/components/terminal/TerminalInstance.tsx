@@ -60,6 +60,9 @@ function isAppShortcut(e: KeyboardEvent): boolean {
   )
     return true;
 
+  // Alt+Cmd+C/W/R (search toggles)
+  if (e.altKey && !e.shiftKey && ["c", "w", "r"].includes(key)) return true;
+
   // Cmd+Alt+Left/Right (prev/next tab), Cmd+[/] (prev/next tab)
   if (e.altKey && (e.key === "ArrowLeft" || e.key === "ArrowRight")) return true;
   if (!e.altKey && !e.shiftKey && (e.key === "[" || e.key === "]")) return true;

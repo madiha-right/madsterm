@@ -87,13 +87,8 @@ export default function App() {
                 <FileExplorer />
               </Panel>
               <PanelResizeHandle
-                style={{
-                  width: 1,
-                  background: theme.border,
-                  cursor: "col-resize",
-                  transition: "background 0.15s",
-                }}
                 className="resize-handle"
+                hitAreaMargins={{ fine: 8, coarse: 15 }}
               />
             </>
           )}
@@ -105,13 +100,8 @@ export default function App() {
           {rightPanelVisible && (
             <>
               <PanelResizeHandle
-                style={{
-                  width: 1,
-                  background: theme.border,
-                  cursor: "col-resize",
-                  transition: "background 0.15s",
-                }}
                 className="resize-handle"
+                hitAreaMargins={{ fine: 8, coarse: 15 }}
               />
               <Panel id="diff-panel" order={3} defaultSize={30} minSize={20} maxSize={50}>
                 <DiffPanel />
