@@ -1,3 +1,4 @@
+use crate::error::AppError;
 use crate::pty_manager::PtyManager;
 use parking_lot::Mutex;
 use std::sync::Arc;
@@ -6,37 +7,50 @@ use tauri::{AppHandle, State};
 type PtyState = Arc<Mutex<PtyManager>>;
 
 /// Validate that a session ID looks like a UUID v4
-fn validate_session_id(session_id: &str) -> Result<(), String> {
+fn validate_session_id(session_id: &str) -> Result<(), AppError> {
     if uuid::Uuid::parse_str(session_id).is_err() {
-        return Err("Invalid session ID format".to_string());
+        return Err(AppError::InvalidInput(
+            "Invalid session ID format".to_string(),
+        ));
     }
     Ok(())
 }
 
 /// Validate terminal dimensions are within reasonable bounds
-fn validate_dimensions(cols: u16, rows: u16) -> Result<(), String> {
+fn validate_dimensions(cols: u16, rows: u16) -> Result<(), AppError> {
     if cols == 0 || cols > 500 {
-        return Err(format!("Invalid cols value: {} (must be 1-500)", cols));
+        return Err(AppError::InvalidInput(format!(
+            "Invalid cols value: {} (must be 1-500)",
+            cols
+        )));
     }
     if rows == 0 || rows > 500 {
-        return Err(format!("Invalid rows value: {} (must be 1-500)", rows));
+        return Err(AppError::InvalidInput(format!(
+            "Invalid rows value: {} (must be 1-500)",
+            rows
+        )));
     }
     Ok(())
 }
 
 /// Validate that a cwd path is an existing directory with no path traversal
-fn validate_cwd(cwd: &str) -> Result<(), String> {
+fn validate_cwd(cwd: &str) -> Result<(), AppError> {
     let path = std::path::Path::new(cwd);
     // Must be absolute path
     if !path.is_absolute() {
-        return Err("CWD must be an absolute path".to_string());
+        return Err(AppError::InvalidInput(
+            "CWD must be an absolute path".to_string(),
+        ));
     }
     // Canonicalize to resolve any .. or symlinks, then check it exists
     let canonical = path
         .canonicalize()
-        .map_err(|_| format!("CWD path does not exist: {}", cwd))?;
+        .map_err(|_| AppError::NotFound(format!("CWD path does not exist: {}", cwd)))?;
     if !canonical.is_dir() {
-        return Err(format!("CWD is not a directory: {}", cwd));
+        return Err(AppError::InvalidInput(format!(
+            "CWD is not a directory: {}",
+            cwd
+        )));
     }
     Ok(())
 }
@@ -48,7 +62,7 @@ pub fn pty_create(
     cols: u16,
     rows: u16,
     cwd: Option<String>,
-) -> Result<String, String> {
+) -> Result<String, AppError> {
     validate_dimensions(cols, rows)?;
     if let Some(ref dir) = cwd {
         if !dir.is_empty() {
@@ -64,7 +78,7 @@ pub fn pty_write(
     state: State<'_, PtyState>,
     session_id: String,
     data: String,
-) -> Result<(), String> {
+) -> Result<(), AppError> {
     validate_session_id(&session_id)?;
     let mut mgr = state.lock();
     mgr.write(&session_id, &data)
@@ -76,7 +90,7 @@ pub fn pty_resize(
     session_id: String,
     cols: u16,
     rows: u16,
-) -> Result<(), String> {
+) -> Result<(), AppError> {
     validate_session_id(&session_id)?;
     validate_dimensions(cols, rows)?;
     let mut mgr = state.lock();
@@ -84,7 +98,7 @@ pub fn pty_resize(
 }
 
 #[tauri::command]
-pub fn pty_close(state: State<'_, PtyState>, session_id: String) -> Result<(), String> {
+pub fn pty_close(state: State<'_, PtyState>, session_id: String) -> Result<(), AppError> {
     validate_session_id(&session_id)?;
     let mut mgr = state.lock();
     mgr.close(&session_id)

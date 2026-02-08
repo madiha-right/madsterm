@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import { type AppTheme, THEMES, type ThemeId } from "../theme/themes";
 
 interface ThemeStore {
@@ -7,25 +8,21 @@ interface ThemeStore {
   setTheme: (id: ThemeId) => void;
 }
 
-const STORAGE_KEY = "madsterm-theme-id";
-
-function loadSavedThemeId(): ThemeId {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved && saved in THEMES) return saved as ThemeId;
-  } catch {
-    // localStorage unavailable, use default
-  }
-  return "paradigm";
-}
-
-const initialId = loadSavedThemeId();
-
-export const useThemeStore = create<ThemeStore>((set) => ({
-  themeId: initialId,
-  theme: THEMES[initialId],
-  setTheme: (id) => {
-    localStorage.setItem(STORAGE_KEY, id);
-    set({ themeId: id, theme: THEMES[id] });
-  },
-}));
+export const useThemeStore = create<ThemeStore>()(
+  persist(
+    (set) => ({
+      themeId: "paradigm" as ThemeId,
+      theme: THEMES.paradigm,
+      setTheme: (id: ThemeId) => set({ themeId: id, theme: THEMES[id] }),
+    }),
+    {
+      name: "madsterm-theme",
+      partialize: (state) => ({ themeId: state.themeId }),
+      merge: (persisted, current) => {
+        const merged = { ...current, ...(persisted as Partial<ThemeStore>) };
+        merged.theme = THEMES[merged.themeId] || THEMES.paradigm;
+        return merged;
+      },
+    },
+  ),
+);
