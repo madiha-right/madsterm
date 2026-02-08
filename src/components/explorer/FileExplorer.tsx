@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback, useState } from "react";
-import { FolderOpen, Search, RotateCw, ChevronsDownUp } from "lucide-react";
+import { FolderTree, Search, X } from "lucide-react";
 import { useFileExplorerStore } from "../../stores/fileExplorerStore";
 import { usePanelStore } from "../../stores/panelStore";
 import { readDirectory, getHomeDir, openFile } from "../../hooks/useFileExplorer";
@@ -7,6 +7,68 @@ import { useTabStore } from "../../stores/tabStore";
 import { useThemeStore } from "../../stores/themeStore";
 import { FileTree } from "./FileTree";
 import { FileNode } from "../../types";
+
+// Reusable toolbar icon button with tooltip that doesn't get clipped
+const ToolbarButton: React.FC<{
+  icon: React.ReactNode;
+  tooltip: string;
+  onClick: (e: React.MouseEvent) => void;
+  isActive?: boolean;
+}> = ({ icon, tooltip, onClick, isActive }) => {
+  const theme = useThemeStore((s) => s.theme);
+  const [hovered, setHovered] = useState(false);
+  const btnRef = useRef<HTMLDivElement>(null);
+  const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties>({});
+
+  // Position tooltip so it never gets clipped by the window
+  useEffect(() => {
+    if (!hovered || !btnRef.current) return;
+    const rect = btnRef.current.getBoundingClientRect();
+    const tipWidth = tooltip.length * 7 + 16; // rough estimate
+    const style: React.CSSProperties = {
+      position: "fixed",
+      top: rect.bottom + 6,
+      zIndex: 9999,
+      padding: "4px 8px",
+      backgroundColor: theme.bgPanel,
+      border: `1px solid ${theme.border}`,
+      color: theme.text,
+      fontSize: 11,
+      whiteSpace: "nowrap",
+      pointerEvents: "none",
+    };
+    // Center under button, but clamp to window
+    let left = rect.left + rect.width / 2 - tipWidth / 2;
+    if (left < 4) left = 4;
+    if (left + tipWidth > window.innerWidth - 4) left = window.innerWidth - 4 - tipWidth;
+    style.left = left;
+    setTooltipStyle(style);
+  }, [hovered, theme, tooltip]);
+
+  return (
+    <div ref={btnRef} style={{ position: "relative" }}>
+      <button
+        onClick={onClick}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        style={{
+          background: hovered || isActive ? theme.bgHover : "transparent",
+          border: "none",
+          cursor: "pointer",
+          padding: 5,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: hovered || isActive ? theme.textBright : theme.textMuted,
+          transition: "color 0.12s ease, background-color 0.12s ease",
+        }}
+      >
+        {icon}
+      </button>
+      {hovered && <div style={tooltipStyle}>{tooltip}</div>}
+    </div>
+  );
+};
 
 export const FileExplorer: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -26,36 +88,28 @@ export const FileExplorer: React.FC = () => {
     setFocusedIndex,
     setSearchQuery,
     setIsSearching,
-    collapseAll,
-    refreshTree,
   } = useFileExplorerStore();
-  const { focusedPanel, setFocusedPanel } = usePanelStore();
+  const { focusedPanel, setFocusedPanel, toggleLeftPanel } = usePanelStore();
   const activeTabId = useTabStore((s) => s.activeTabId);
   const activeTab = useTabStore((s) => s.tabs.find((t) => t.id === s.activeTabId));
   const [flatList, setFlatList] = useState<{ node: FileNode; depth: number }[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [headerHovered, setHeaderHovered] = useState(false);
-  const [homeDir, setHomeDir] = useState<string | null>(null);
   const gPressedRef = useRef(false);
 
-  // Load initial directory and fetch home dir
+  // Load initial directory
   useEffect(() => {
     const init = async () => {
-      try {
-        const home = await getHomeDir();
-        setHomeDir(home);
-      } catch {}
       if (tree) return;
       setIsLoading(true);
       try {
-        const home = rootPath || await getHomeDir();
+        const home = rootPath || (await getHomeDir());
         const result = await readDirectory(home, 2);
         setRootPath(home);
         setTree(result);
         setExpanded(result.path, true);
       } catch (e: any) {
-        const msg = typeof e === 'string' ? e : e?.message || JSON.stringify(e);
+        const msg = typeof e === "string" ? e : e?.message || JSON.stringify(e);
         console.error("Failed to load directory:", msg);
         setLoadError(msg);
       }
@@ -64,12 +118,22 @@ export const FileExplorer: React.FC = () => {
     init();
   }, []);
 
-  // Show skeleton when switching to a tab that hasn't reported its CWD yet
+  // When switching to a tab that hasn't reported its CWD yet
   useEffect(() => {
     if (!activeTabId) return;
     if (!activeTab?.cwd && rootPath) {
-      setTree(null);
-      setIsLoading(true);
+      const reload = async () => {
+        setIsLoading(true);
+        try {
+          const result = await readDirectory(rootPath, 2);
+          setTree(result);
+          setExpanded(result.path, true);
+        } catch {
+          // Keep existing tree if reload fails
+        }
+        setIsLoading(false);
+      };
+      reload();
     }
   }, [activeTabId]);
 
@@ -89,7 +153,7 @@ export const FileExplorer: React.FC = () => {
         setExpanded(result.path, true);
         setFocusedIndex(0);
       } catch (e: any) {
-        const msg = typeof e === 'string' ? e : e?.message || JSON.stringify(e);
+        const msg = typeof e === "string" ? e : e?.message || JSON.stringify(e);
         console.error("Failed to load directory:", msg);
       }
       setIsLoading(false);
@@ -109,7 +173,7 @@ export const FileExplorer: React.FC = () => {
         setTree(result);
         setExpanded(result.path, true);
       } catch (e: any) {
-        const msg = typeof e === 'string' ? e : e?.message || JSON.stringify(e);
+        const msg = typeof e === "string" ? e : e?.message || JSON.stringify(e);
         console.error("Failed to refresh directory:", msg);
       }
       setIsLoading(false);
@@ -123,8 +187,8 @@ export const FileExplorer: React.FC = () => {
     const flat: { node: FileNode; depth: number }[] = [];
     const flatten = (node: FileNode, depth: number) => {
       if (depth > 0) {
-        const matchesSearch = !searchQuery ||
-          node.name.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesSearch =
+          !searchQuery || node.name.toLowerCase().includes(searchQuery.toLowerCase());
         if (matchesSearch) {
           flat.push({ node, depth: depth - 1 });
         }
@@ -143,11 +207,9 @@ export const FileExplorer: React.FC = () => {
     async (node: FileNode) => {
       if (!node.isDir) return;
       if (!expandedPaths.has(node.path)) {
-        // Load children if not loaded
         if (!node.children || node.children.length === 0) {
           try {
             const loaded = await readDirectory(node.path, 1);
-            // Update the tree
             const updateChildren = (root: FileNode): FileNode => {
               if (root.path === node.path) {
                 return { ...root, children: loaded.children, isLoaded: true };
@@ -167,7 +229,7 @@ export const FileExplorer: React.FC = () => {
         setExpanded(node.path, false);
       }
     },
-    [expandedPaths, tree, setTree, setExpanded]
+    [expandedPaths, tree, setTree, setExpanded],
   );
 
   const handleFileOpen = useCallback(
@@ -175,7 +237,6 @@ export const FileExplorer: React.FC = () => {
       if (node.isDir) {
         handleExpand(node);
       } else {
-        // Open file with default system application
         try {
           await openFile(node.path);
         } catch (e) {
@@ -183,7 +244,7 @@ export const FileExplorer: React.FC = () => {
         }
       }
     },
-    [handleExpand]
+    [handleExpand],
   );
 
   // Vim keybindings
@@ -201,25 +262,37 @@ export const FileExplorer: React.FC = () => {
           containerRef.current?.focus();
           return;
         }
-        // Let the search input handle the rest
         return;
       }
 
       // g -> wait for next key
       if (e.key === "g") {
         if (gPressedRef.current) {
-          // gg -> jump to top
           setFocusedIndex(0);
           gPressedRef.current = false;
           e.preventDefault();
           return;
         }
         gPressedRef.current = true;
-        setTimeout(() => { gPressedRef.current = false; }, 500);
+        setTimeout(() => {
+          gPressedRef.current = false;
+        }, 500);
         e.preventDefault();
         return;
       }
       gPressedRef.current = false;
+
+      // Ctrl+D / Ctrl+U — half-page jump
+      if (e.ctrlKey && (e.key === "d" || e.key === "u")) {
+        e.preventDefault();
+        const jump = 10;
+        if (e.key === "d") {
+          setFocusedIndex(Math.min(focusedIndex + jump, flatList.length - 1));
+        } else {
+          setFocusedIndex(Math.max(focusedIndex - jump, 0));
+        }
+        return;
+      }
 
       switch (e.key) {
         case "j":
@@ -255,7 +328,6 @@ export const FileExplorer: React.FC = () => {
         case "/":
           e.preventDefault();
           setIsSearching(true);
-          // Focus the always-visible search input
           setTimeout(() => searchInputRef.current?.focus(), 0);
           break;
         case "G":
@@ -279,7 +351,7 @@ export const FileExplorer: React.FC = () => {
       setIsSearching,
       setSearchQuery,
       setFocusedPanel,
-    ]
+    ],
   );
 
   // Auto-focus when panel becomes focused
@@ -289,15 +361,11 @@ export const FileExplorer: React.FC = () => {
     }
   }, [focusedPanel]);
 
-  // Extract folder name and display path from rootPath
-  const folderName = rootPath ? rootPath.split("/").filter(Boolean).pop() || "Explorer" : "Explorer";
-  const displayPath = rootPath
-    ? (homeDir && rootPath.startsWith(homeDir) ? "~" + rootPath.slice(homeDir.length) : rootPath)
-    : null;
-
   return (
     <div
       ref={containerRef}
+      role="tree"
+      aria-label="File explorer"
       tabIndex={0}
       onKeyDown={handleKeyDown}
       onClick={() => setFocusedPanel("explorer")}
@@ -311,200 +379,131 @@ export const FileExplorer: React.FC = () => {
         overflow: "hidden",
       }}
     >
-      {/* Header */}
+      {/* Toolbar — 2 icons on left, close on right (matches Warp) */}
       <div
-        onMouseEnter={() => setHeaderHovered(true)}
-        onMouseLeave={() => setHeaderHovered(false)}
         style={{
           display: "flex",
           alignItems: "center",
-          padding: "10px 12px",
+          padding: "4px 6px",
           borderBottom: `1px solid ${theme.border}`,
-          minHeight: 38,
+          minHeight: 32,
+          gap: 1,
         }}
       >
-        <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0, gap: 2 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-            <FolderOpen size={14} color={theme.accent} style={{ flexShrink: 0 }} />
-            <span
-              style={{
-                fontSize: 12,
-                fontWeight: 600,
-                color: theme.textBright,
-                letterSpacing: "0.3px",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
+        <ToolbarButton
+          icon={<FolderTree size={14} />}
+          tooltip="Project explorer  \u2318B"
+          isActive={!isSearching}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (isSearching) {
+              setIsSearching(false);
+              setSearchQuery("");
+              containerRef.current?.focus();
+            }
+          }}
+        />
+        <ToolbarButton
+          icon={<Search size={14} />}
+          tooltip="Global search  /"
+          isActive={isSearching}
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsSearching(true);
+            setTimeout(() => searchInputRef.current?.focus(), 0);
+          }}
+        />
+        <div style={{ flex: 1 }} />
+        <ToolbarButton
+          icon={<X size={14} />}
+          tooltip="Close  \u2318B"
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleLeftPanel();
+          }}
+        />
+      </div>
+
+      {/* Search bar — only visible when searching */}
+      {isSearching && (
+        <div style={{ padding: "6px 8px", borderBottom: `1px solid ${theme.border}` }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "4px 8px",
+              backgroundColor: theme.bg,
+              border: `1px solid ${theme.border}`,
+            }}
+          >
+            <Search size={12} color={theme.textMuted} style={{ flexShrink: 0 }} />
+            <input
+              ref={searchInputRef}
+              aria-label="Search files"
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
               }}
-            >
-              {folderName}
-            </span>
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  setSearchQuery("");
+                  setIsSearching(false);
+                  containerRef.current?.focus();
+                  e.stopPropagation();
+                }
+                if (e.key === "Enter") {
+                  setIsSearching(false);
+                  containerRef.current?.focus();
+                  e.stopPropagation();
+                }
+              }}
+              placeholder="Search files..."
+              style={{
+                width: "100%",
+                background: "transparent",
+                border: "none",
+                color: theme.text,
+                fontSize: 12,
+                fontFamily: "inherit",
+                outline: "none",
+                padding: 0,
+                lineHeight: "18px",
+              }}
+            />
           </div>
-          {displayPath && (
-            <span
-              title={rootPath || undefined}
+          {searchQuery && (
+            <div
               style={{
                 fontSize: 10,
                 color: theme.textMuted,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                paddingLeft: 21,
+                paddingTop: 3,
+                paddingLeft: 2,
               }}
             >
-              {displayPath}
-            </span>
+              {flatList.length} match{flatList.length !== 1 ? "es" : ""}
+            </div>
           )}
         </div>
-
-        {/* Header action buttons */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 2,
-            opacity: headerHovered ? 1 : 0.4,
-            transition: "opacity 0.15s ease",
-          }}
-        >
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              collapseAll();
-            }}
-            title="Collapse all"
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              padding: "3px 4px",
-              borderRadius: 0,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: theme.textMuted,
-              transition: "color 0.15s ease, background-color 0.15s ease",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = theme.textBright;
-              e.currentTarget.style.backgroundColor = theme.bgHover;
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = theme.textMuted;
-              e.currentTarget.style.backgroundColor = "transparent";
-            }}
-          >
-            <ChevronsDownUp size={13} />
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              refreshTree();
-            }}
-            title="Refresh"
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              padding: "3px 4px",
-              borderRadius: 0,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: theme.textMuted,
-              transition: "color 0.15s ease, background-color 0.15s ease",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = theme.textBright;
-              e.currentTarget.style.backgroundColor = theme.bgHover;
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = theme.textMuted;
-              e.currentTarget.style.backgroundColor = "transparent";
-            }}
-          >
-            <RotateCw size={13} />
-          </button>
-        </div>
-      </div>
-
-      {/* Always-visible search bar */}
-      <div style={{ padding: "6px 8px", borderBottom: `1px solid ${theme.border}` }}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            padding: "4px 8px",
-            borderRadius: 0,
-            backgroundColor: isSearching ? theme.bg : "transparent",
-            border: isSearching ? `1px solid ${theme.border}` : `1px solid transparent`,
-            transition: "background-color 0.15s ease, border-color 0.15s ease",
-          }}
-        >
-          <Search size={12} color={theme.textMuted} style={{ flexShrink: 0 }} />
-          <input
-            ref={searchInputRef}
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              if (!isSearching) setIsSearching(true);
-            }}
-            onFocus={() => {
-              setIsSearching(true);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Escape") {
-                setSearchQuery("");
-                setIsSearching(false);
-                containerRef.current?.focus();
-                e.stopPropagation();
-              }
-              if (e.key === "Enter") {
-                setIsSearching(false);
-                containerRef.current?.focus();
-                e.stopPropagation();
-              }
-            }}
-            placeholder="Search files..."
-            style={{
-              width: "100%",
-              background: "transparent",
-              border: "none",
-              color: theme.text,
-              fontSize: 12,
-              fontFamily: "inherit",
-              outline: "none",
-              padding: 0,
-              lineHeight: "18px",
-            }}
-          />
-        </div>
-        {/* File count */}
-        <div
-          style={{
-            fontSize: 10,
-            color: theme.textMuted,
-            paddingTop: 3,
-            paddingLeft: 2,
-            letterSpacing: "0.2px",
-          }}
-        >
-          {flatList.length} item{flatList.length !== 1 ? "s" : ""}
-          {searchQuery && ` matching "${searchQuery}"`}
-        </div>
-      </div>
+      )}
 
       {/* Loading skeleton */}
       {isLoading && !tree && (
         <div style={{ padding: "8px 12px", display: "flex", flexDirection: "column", gap: 6 }}>
           {Array.from({ length: 10 }).map((_, i) => (
-            <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, paddingLeft: i % 3 === 0 ? 0 : 16 }}>
+            <div
+              key={i}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                paddingLeft: i % 3 === 0 ? 0 : 16,
+              }}
+            >
               <div
                 style={{
                   width: 14,
                   height: 14,
-                  borderRadius: 0,
                   backgroundColor: theme.bgActive,
                   animation: "skeleton-pulse 1.2s ease-in-out infinite",
                   animationDelay: `${i * 0.08}s`,
@@ -513,7 +512,6 @@ export const FileExplorer: React.FC = () => {
               <div
                 style={{
                   height: 12,
-                  borderRadius: 0,
                   backgroundColor: theme.bgActive,
                   width: `${45 + ((i * 17) % 40)}%`,
                   animation: "skeleton-pulse 1.2s ease-in-out infinite",
@@ -533,7 +531,9 @@ export const FileExplorer: React.FC = () => {
 
       {/* Error display */}
       {loadError && (
-        <div style={{ padding: "8px 12px", color: "#ff6b6b", fontSize: 11, wordBreak: "break-all" }}>
+        <div
+          style={{ padding: "8px 12px", color: "#ff6b6b", fontSize: 11, wordBreak: "break-all" }}
+        >
           Error: {loadError}
         </div>
       )}

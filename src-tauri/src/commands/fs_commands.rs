@@ -31,6 +31,25 @@ pub fn get_home_dir() -> Result<String, String> {
 }
 
 #[tauri::command]
+pub fn get_shell_name() -> String {
+    #[cfg(unix)]
+    {
+        if let Ok(shell) = std::env::var("SHELL") {
+            return shell.rsplit('/').next().unwrap_or("sh").to_string();
+        }
+        "sh".to_string()
+    }
+    #[cfg(windows)]
+    {
+        if let Ok(comspec) = std::env::var("COMSPEC") {
+            let name = comspec.rsplit('\\').next().unwrap_or("cmd.exe");
+            return name.trim_end_matches(".exe").to_string();
+        }
+        "powershell".to_string()
+    }
+}
+
+#[tauri::command]
 pub fn open_file(path: String) -> Result<(), String> {
     #[cfg(target_os = "macos")]
     {
@@ -70,7 +89,7 @@ pub fn read_directory(path: String, depth: Option<usize>) -> Result<FileNode, St
     build_tree(root, 0, max_depth)
 }
 
-fn build_tree(path: &Path, current_depth: usize, max_depth: usize) -> Result<FileNode, String> {
+pub fn build_tree(path: &Path, current_depth: usize, max_depth: usize) -> Result<FileNode, String> {
     let name = path
         .file_name()
         .map(|n| n.to_string_lossy().to_string())
@@ -104,7 +123,8 @@ fn build_tree(path: &Path, current_depth: usize, max_depth: usize) -> Result<Fil
             let entry_name = entry.file_name().to_string_lossy().to_string();
 
             // Skip hidden files/dirs (starting with .) and node_modules, target
-            if entry_name.starts_with('.') || entry_name == "node_modules" || entry_name == "target" {
+            if entry_name.starts_with('.') || entry_name == "node_modules" || entry_name == "target"
+            {
                 continue;
             }
 
@@ -139,4 +159,70 @@ fn build_tree(path: &Path, current_depth: usize, max_depth: usize) -> Result<Fil
         is_dir,
         children,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+
+    #[test]
+    fn test_read_directory_nonexistent() {
+        let result = read_directory("/nonexistent/path".to_string(), None);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_read_directory_exists() {
+        let tmp = std::env::temp_dir();
+        let result = read_directory(tmp.to_string_lossy().to_string(), Some(1));
+        assert!(result.is_ok());
+        let node = result.unwrap();
+        assert!(node.is_dir);
+    }
+
+    #[test]
+    fn test_build_tree_skips_hidden_files() {
+        let tmp = std::env::temp_dir().join("madsterm_test_hidden");
+        let _ = fs::create_dir_all(&tmp);
+        let _ = fs::write(tmp.join(".hidden"), "hidden");
+        let _ = fs::write(tmp.join("visible.txt"), "visible");
+
+        let result = build_tree(&tmp, 0, 1).unwrap();
+        let children = result.children.unwrap();
+        assert!(children.iter().all(|c| !c.name.starts_with('.')));
+        assert!(children.iter().any(|c| c.name == "visible.txt"));
+
+        let _ = fs::remove_dir_all(&tmp);
+    }
+
+    #[test]
+    fn test_build_tree_sorts_dirs_before_files() {
+        let tmp = std::env::temp_dir().join("madsterm_test_sort");
+        let _ = fs::create_dir_all(tmp.join("zdir"));
+        let _ = fs::create_dir_all(tmp.join("adir"));
+        let _ = fs::write(tmp.join("bfile.txt"), "b");
+        let _ = fs::write(tmp.join("afile.txt"), "a");
+
+        let result = build_tree(&tmp, 0, 1).unwrap();
+        let children = result.children.unwrap();
+
+        // Dirs should come first, sorted alphabetically
+        let names: Vec<&str> = children.iter().map(|c| c.name.as_str()).collect();
+        assert_eq!(names, vec!["adir", "zdir", "afile.txt", "bfile.txt"]);
+
+        let _ = fs::remove_dir_all(&tmp);
+    }
+
+    #[test]
+    fn test_get_shell_name() {
+        let name = get_shell_name();
+        assert!(!name.is_empty());
+    }
+
+    #[test]
+    fn test_get_home_dir() {
+        let result = get_home_dir();
+        assert!(result.is_ok());
+    }
 }

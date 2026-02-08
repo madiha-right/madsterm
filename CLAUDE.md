@@ -22,7 +22,16 @@ npm run dev
 npx tsc --noEmit
 ```
 
-No test framework is configured.
+```bash
+# Frontend tests (Vitest + React Testing Library)
+npm test
+
+# Rust tests
+cd src-tauri && cargo test
+
+# Lint
+npm run lint
+```
 
 ## Architecture
 
@@ -37,11 +46,14 @@ No test framework is configured.
 4. Resize: `terminal.onResize()` → `invoke("pty_resize")`
 
 ### State Management
-Zustand stores (no middleware/persistence):
+Zustand stores (`panelStore` and `settingsStore` use `persist` middleware; others do not):
 - `tabStore` — tab list, active tab, session IDs
-- `panelStore` — left/right panel visibility, focused panel tracking
+- `panelStore` — left/right panel visibility, focused panel tracking (persisted)
 - `fileExplorerStore` — file tree, expanded paths, search state
 - `diffStore` — git changes list, selected file diff, loading state
+- `settingsStore` — terminal settings: font, cursor, vim mode, scrollback (persisted)
+- `notificationStore` — toast notification queue
+- `themeStore` — active theme (manual localStorage persistence)
 
 ### Key Frontend Patterns
 - Each tab gets a `TerminalInstance` that creates its own xterm.js `Terminal` + PTY session on mount, disposes on unmount
@@ -54,7 +66,7 @@ Zustand stores (no middleware/persistence):
 Defined in `src-tauri/src/commands/`:
 - `pty_create`, `pty_write`, `pty_resize`, `pty_close` — PTY lifecycle
 - `git_branch`, `git_status`, `git_diff` — git integration (uses `git2` crate, not CLI)
-- `read_directory`, `open_file`, `get_cwd`, `get_home_dir` — filesystem
+- `read_directory`, `open_file`, `get_cwd`, `get_home_dir`, `get_shell_name` — filesystem
 
 ### Styling
 Inline styles everywhere (no CSS modules/Tailwind utility classes in components despite Tailwind being configured). Theme colors centralized in `src/theme/colors.ts` as the `THEME` object. The xterm theme is nested inside as `THEME.xtermTheme`.
@@ -62,7 +74,7 @@ Inline styles everywhere (no CSS modules/Tailwind utility classes in components 
 ## Important Notes
 
 - `Cmd+L` was removed as a shortcut for the changes panel (it conflicts with terminal clear-line). Use `Cmd+Shift+=` instead.
-- PTY sessions use `String::from_utf8_lossy` for output — partial UTF-8 sequences at chunk boundaries may produce replacement characters.
-- The diff panel polls `git_status` every 3 seconds via `setInterval`.
+- PTY reader buffers incomplete UTF-8 sequences across chunk boundaries, emitting only valid portions and carrying over partial sequences to the next read. Falls back to lossy conversion only for genuinely corrupt data (remainder > 4 bytes).
+- The diff panel polls `git_status` every 5 seconds via `setInterval`.
 - File explorer skips hidden files (`.`-prefixed), `node_modules`, and `target` directories.
 - Tab bar has `paddingLeft: 80` to account for macOS traffic light buttons.

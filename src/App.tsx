@@ -3,6 +3,7 @@ import { PanelGroup, Panel, PanelResizeHandle } from "react-resizable-panels";
 import { TabBar } from "./components/layout/TabBar";
 import { StatusBar } from "./components/layout/StatusBar";
 import { SettingsPanel } from "./components/layout/SettingsPanel";
+import { AboutDialog } from "./components/layout/AboutDialog";
 import { FileExplorer } from "./components/explorer/FileExplorer";
 import { TerminalPanel } from "./components/terminal/TerminalPanel";
 import { DiffPanel } from "./components/diff/DiffPanel";
@@ -10,6 +11,7 @@ import { usePanelStore } from "./stores/panelStore";
 import { useTabStore } from "./stores/tabStore";
 import { useThemeStore } from "./stores/themeStore";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
+import { ToastContainer } from "./components/ui/Toast";
 
 function generateId() {
   return Math.random().toString(36).substring(2, 10);
@@ -19,7 +21,7 @@ export default function App() {
   const { leftPanelVisible, rightPanelVisible } = usePanelStore();
   const { tabs, activeTabId, addTab, removeTab } = useTabStore();
   const theme = useThemeStore((s) => s.theme);
-  const { settingsOpen, setSettingsOpen } = usePanelStore();
+  const { settingsOpen, setSettingsOpen, aboutOpen, setAboutOpen } = usePanelStore();
 
   const handleOpenSettings = useCallback(() => {
     setSettingsOpen(true);
@@ -81,13 +83,7 @@ export default function App() {
         <PanelGroup direction="horizontal">
           {leftPanelVisible && (
             <>
-              <Panel
-                id="file-explorer"
-                order={1}
-                defaultSize={20}
-                minSize={15}
-                maxSize={35}
-              >
+              <Panel id="file-explorer" order={1} defaultSize={20} minSize={15} maxSize={35}>
                 <FileExplorer />
               </Panel>
               <PanelResizeHandle
@@ -117,13 +113,7 @@ export default function App() {
                 }}
                 className="resize-handle"
               />
-              <Panel
-                id="diff-panel"
-                order={3}
-                defaultSize={30}
-                minSize={20}
-                maxSize={50}
-              >
+              <Panel id="diff-panel" order={3} defaultSize={30} minSize={20} maxSize={50}>
                 <DiffPanel />
               </Panel>
             </>
@@ -133,6 +123,8 @@ export default function App() {
 
       <StatusBar />
       <SettingsPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />
+      <ToastContainer />
     </div>
   );
 }

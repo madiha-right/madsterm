@@ -1,27 +1,39 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { usePanelStore } from "../stores/panelStore";
 import { useTabStore } from "../stores/tabStore";
 import { useSettingsStore } from "../stores/settingsStore";
 import { useFileExplorerStore } from "../stores/fileExplorerStore";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 
-export function useKeyboardShortcuts(onNewTab: () => void, onCloseTab: () => void, onOpenSettings?: () => void) {
+export function useKeyboardShortcuts(
+  onNewTab: () => void,
+  onCloseTab: () => void,
+  onOpenSettings?: () => void,
+) {
   const toggleLeftPanel = usePanelStore((s) => s.toggleLeftPanel);
   const toggleRightPanel = usePanelStore((s) => s.toggleRightPanel);
   const { tabs, activeTabId, setActiveTab, reopenLastClosedTab, addTab } = useTabStore();
   const { increaseFontSize, decreaseFontSize, resetFontSize } = useSettingsStore();
   const setIsSearching = useFileExplorerStore((s) => s.setIsSearching);
 
+  // Use refs for frequently-changing values to avoid recreating the listener
+  const tabsRef = useRef(tabs);
+  const activeTabIdRef = useRef(activeTabId);
+  tabsRef.current = tabs;
+  activeTabIdRef.current = activeTabId;
+
   useEffect(() => {
+    const isMac = navigator.platform.includes("Mac");
     const handler = (e: KeyboardEvent) => {
-      const meta = e.metaKey || e.ctrlKey;
+      // On macOS, only Cmd triggers app shortcuts. On Windows/Linux, Ctrl does.
+      const meta = isMac ? e.metaKey : e.ctrlKey;
       if (!meta) return;
 
-      // Cmd+Ctrl+F -> Toggle fullscreen (must be checked BEFORE meta-only checks)
-      if (e.ctrlKey && e.metaKey && e.key.toLowerCase() === "f") {
+      // Cmd+Ctrl+F -> Toggle fullscreen (macOS only, must be checked BEFORE meta-only checks)
+      if (isMac && e.ctrlKey && e.metaKey && e.key.toLowerCase() === "f") {
         e.preventDefault();
         const win = getCurrentWindow();
-        win.isFullscreen().then(isFs => win.setFullscreen(!isFs));
+        win.isFullscreen().then((isFs) => win.setFullscreen(!isFs));
         return;
       }
 
@@ -79,6 +91,7 @@ export function useKeyboardShortcuts(onNewTab: () => void, onCloseTab: () => voi
       if (!e.shiftKey && !e.altKey && e.key === "b") {
         e.preventDefault();
         toggleLeftPanel();
+        setIsSearching(false);
         return;
       }
 
@@ -86,6 +99,17 @@ export function useKeyboardShortcuts(onNewTab: () => void, onCloseTab: () => voi
       if (e.shiftKey && !e.altKey && (e.key === "E" || e.key === "e")) {
         e.preventDefault();
         toggleLeftPanel();
+        setIsSearching(false);
+        return;
+      }
+
+      // Cmd+Shift+F -> Global search (open explorer + activate search)
+      if (e.shiftKey && !e.altKey && (e.key === "F" || e.key === "f")) {
+        e.preventDefault();
+        if (!usePanelStore.getState().leftPanelVisible) {
+          toggleLeftPanel();
+        }
+        setIsSearching(true);
         return;
       }
 
@@ -121,8 +145,9 @@ export function useKeyboardShortcuts(onNewTab: () => void, onCloseTab: () => voi
       if (!e.shiftKey && !e.altKey && e.key >= "1" && e.key <= "9") {
         e.preventDefault();
         const idx = parseInt(e.key) - 1;
-        if (idx < tabs.length) {
-          setActiveTab(tabs[idx].id);
+        const currentTabs = tabsRef.current;
+        if (idx < currentTabs.length) {
+          setActiveTab(currentTabs[idx].id);
         }
         return;
       }
@@ -130,10 +155,12 @@ export function useKeyboardShortcuts(onNewTab: () => void, onCloseTab: () => voi
       // Cmd+Alt+Left / Cmd+[ -> previous tab (wraps around)
       if ((e.altKey && e.key === "ArrowLeft") || (!e.altKey && e.key === "[")) {
         e.preventDefault();
-        const currentIdx = tabs.findIndex((t) => t.id === activeTabId);
-        if (tabs.length > 0) {
-          const prevIdx = currentIdx <= 0 ? tabs.length - 1 : currentIdx - 1;
-          setActiveTab(tabs[prevIdx].id);
+        const currentTabs = tabsRef.current;
+        const currentActiveId = activeTabIdRef.current;
+        const currentIdx = currentTabs.findIndex((t) => t.id === currentActiveId);
+        if (currentTabs.length > 0) {
+          const prevIdx = currentIdx <= 0 ? currentTabs.length - 1 : currentIdx - 1;
+          setActiveTab(currentTabs[prevIdx].id);
         }
         return;
       }
@@ -141,10 +168,12 @@ export function useKeyboardShortcuts(onNewTab: () => void, onCloseTab: () => voi
       // Cmd+Alt+Right / Cmd+] -> next tab (wraps around)
       if ((e.altKey && e.key === "ArrowRight") || (!e.altKey && e.key === "]")) {
         e.preventDefault();
-        const currentIdx = tabs.findIndex((t) => t.id === activeTabId);
-        if (tabs.length > 0) {
-          const nextIdx = currentIdx >= tabs.length - 1 ? 0 : currentIdx + 1;
-          setActiveTab(tabs[nextIdx].id);
+        const currentTabs = tabsRef.current;
+        const currentActiveId = activeTabIdRef.current;
+        const currentIdx = currentTabs.findIndex((t) => t.id === currentActiveId);
+        if (currentTabs.length > 0) {
+          const nextIdx = currentIdx >= currentTabs.length - 1 ? 0 : currentIdx + 1;
+          setActiveTab(currentTabs[nextIdx].id);
         }
         return;
       }
@@ -152,5 +181,18 @@ export function useKeyboardShortcuts(onNewTab: () => void, onCloseTab: () => voi
 
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
-  }, [toggleLeftPanel, toggleRightPanel, onNewTab, onCloseTab, onOpenSettings, tabs, activeTabId, setActiveTab, reopenLastClosedTab, addTab, increaseFontSize, decreaseFontSize, resetFontSize, setIsSearching]);
+  }, [
+    toggleLeftPanel,
+    toggleRightPanel,
+    onNewTab,
+    onCloseTab,
+    onOpenSettings,
+    setActiveTab,
+    reopenLastClosedTab,
+    addTab,
+    increaseFontSize,
+    decreaseFontSize,
+    resetFontSize,
+    setIsSearching,
+  ]);
 }

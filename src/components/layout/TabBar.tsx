@@ -116,13 +116,16 @@ export const TabBar: React.FC<TabBarProps> = ({ onNewTab }) => {
     setDragOverIndex(index);
   }, []);
 
-  const handleDrop = useCallback((toIndex: number) => {
-    if (dragIndex !== null && dragIndex !== toIndex) {
-      moveTab(dragIndex, toIndex);
-    }
-    setDragIndex(null);
-    setDragOverIndex(null);
-  }, [dragIndex, moveTab]);
+  const handleDrop = useCallback(
+    (toIndex: number) => {
+      if (dragIndex !== null && dragIndex !== toIndex) {
+        moveTab(dragIndex, toIndex);
+      }
+      setDragIndex(null);
+      setDragOverIndex(null);
+    },
+    [dragIndex, moveTab],
+  );
 
   const handleDragEnd = useCallback(() => {
     setDragIndex(null);
@@ -132,6 +135,8 @@ export const TabBar: React.FC<TabBarProps> = ({ onNewTab }) => {
   return (
     <div
       data-tauri-drag-region
+      role="tablist"
+      aria-label="Terminal tabs"
       style={{
         display: "flex",
         alignItems: "center",
@@ -140,7 +145,8 @@ export const TabBar: React.FC<TabBarProps> = ({ onNewTab }) => {
         height: 40,
         minHeight: 40,
         overflow: "hidden",
-        paddingLeft: 80,
+        // Extra padding on macOS to account for traffic light buttons
+        paddingLeft: navigator.platform.includes("Mac") ? 80 : 8,
       }}
     >
       <AppLogo />
@@ -167,6 +173,9 @@ export const TabBar: React.FC<TabBarProps> = ({ onNewTab }) => {
           return (
             <div
               key={tab.id}
+              role="tab"
+              aria-selected={isActive}
+              aria-label={`Tab ${index + 1}: ${tab.title || "Terminal"}`}
               draggable
               onDragStart={(e) => handleDragStart(index, e)}
               onDragOver={(e) => handleDragOver(index, e)}
@@ -196,12 +205,8 @@ export const TabBar: React.FC<TabBarProps> = ({ onNewTab }) => {
                   : isHovered
                     ? theme.bgHover
                     : "transparent",
-                borderBottom: isActive
-                  ? `2px solid ${theme.accent}`
-                  : "2px solid transparent",
-                borderLeft: isDragOver
-                  ? `2px solid ${theme.accent}`
-                  : "2px solid transparent",
+                borderBottom: isActive ? `2px solid ${theme.accent}` : "2px solid transparent",
+                borderLeft: isDragOver ? `2px solid ${theme.accent}` : "2px solid transparent",
                 borderTop: "2px solid transparent",
                 borderRight: "none",
                 borderRadius: 0,
@@ -211,8 +216,7 @@ export const TabBar: React.FC<TabBarProps> = ({ onNewTab }) => {
                 whiteSpace: "nowrap",
                 marginRight: 2,
                 opacity: isDragging ? 0.5 : 1,
-                transition:
-                  "background-color 0.15s ease, opacity 0.15s ease, color 0.15s ease",
+                transition: "background-color 0.15s ease, opacity 0.15s ease, color 0.15s ease",
                 boxSizing: "border-box",
               }}
             >
@@ -244,6 +248,7 @@ export const TabBar: React.FC<TabBarProps> = ({ onNewTab }) => {
 
               {/* Close button */}
               <button
+                aria-label={`Close tab ${index + 1}`}
                 onClick={(e) => {
                   e.stopPropagation();
                   removeTab(tab.id);
@@ -281,6 +286,8 @@ export const TabBar: React.FC<TabBarProps> = ({ onNewTab }) => {
 
         {/* New Tab Button */}
         <button
+          aria-label="New tab"
+          title="New tab (Cmd+T)"
           onClick={onNewTab}
           onMouseEnter={() => setNewTabHovered(true)}
           onMouseLeave={() => setNewTabHovered(false)}
@@ -297,8 +304,7 @@ export const TabBar: React.FC<TabBarProps> = ({ onNewTab }) => {
             borderRadius: 0,
             marginLeft: 6,
             flexShrink: 0,
-            transition:
-              "background-color 0.15s ease, color 0.15s ease",
+            transition: "background-color 0.15s ease, color 0.15s ease",
           }}
         >
           <Plus size={14} />

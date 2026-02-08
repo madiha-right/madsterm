@@ -6,12 +6,14 @@ interface DiffStore {
   selectedFilePath: string | null;
   selectedFileDiff: FileDiff | null;
   expandedFiles: Set<string>;
+  fileDiffs: Map<string, FileDiff>;
   focusedIndex: number;
   isLoading: boolean;
   setChanges: (changes: FileChange[]) => void;
   setSelectedFile: (path: string | null) => void;
   setSelectedFileDiff: (diff: FileDiff | null) => void;
   toggleFileExpanded: (path: string) => void;
+  setFileDiff: (path: string, diff: FileDiff) => void;
   setFocusedIndex: (index: number) => void;
   setIsLoading: (loading: boolean) => void;
 }
@@ -21,6 +23,7 @@ export const useDiffStore = create<DiffStore>((set) => ({
   selectedFilePath: null,
   selectedFileDiff: null,
   expandedFiles: new Set<string>(),
+  fileDiffs: new Map<string, FileDiff>(),
   focusedIndex: 0,
   isLoading: false,
 
@@ -39,6 +42,13 @@ export const useDiffStore = create<DiffStore>((set) => ({
         next.add(path);
       }
       return { expandedFiles: next };
+    }),
+
+  setFileDiff: (path, diff) =>
+    set((state) => {
+      const next = new Map(state.fileDiffs);
+      next.set(path, diff);
+      return { fileDiffs: next };
     }),
 
   setFocusedIndex: (index) => set({ focusedIndex: index }),

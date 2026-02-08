@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useRef } from "react";
 import {
   Folder,
   FolderOpen,
@@ -37,11 +37,15 @@ function getFileIcon(name: string, isDir: boolean, isExpanded: boolean, theme: A
   const ext = lower.split(".").pop();
 
   // Special filenames
-  if (lower === "cargo.toml" || lower === "cargo.lock") return <FileCode size={14} color="#e06c75" />;
-  if (lower === "package.json" || lower === "package-lock.json") return <FileJson size={14} color="#98c379" />;
+  if (lower === "cargo.toml" || lower === "cargo.lock")
+    return <FileCode size={14} color="#e06c75" />;
+  if (lower === "package.json" || lower === "package-lock.json")
+    return <FileJson size={14} color="#98c379" />;
   if (lower === "tsconfig.json") return <FileJson size={14} color="#61afef" />;
-  if (lower === ".gitignore" || lower === ".env") return <FileText size={14} color={theme.textMuted} />;
-  if (lower === "dockerfile" || lower.startsWith("dockerfile")) return <FileCode size={14} color="#61afef" />;
+  if (lower === ".gitignore" || lower === ".env")
+    return <FileText size={14} color={theme.textMuted} />;
+  if (lower === "dockerfile" || lower.startsWith("dockerfile"))
+    return <FileCode size={14} color="#61afef" />;
   if (lower === "makefile") return <FileCode size={14} color="#e8a838" />;
   if (lower === "license" || lower === "licence") return <FileText size={14} color="#e8a838" />;
   if (lower.endsWith(".lock")) return <Lock size={14} color={theme.textMuted} />;
@@ -163,12 +167,6 @@ export const FileTreeItem: React.FC<FileTreeItemProps> = ({
 }) => {
   const itemRef = useRef<HTMLDivElement>(null);
   const theme = useThemeStore((s) => s.theme);
-
-  useEffect(() => {
-    if (isFocused && itemRef.current) {
-      itemRef.current.scrollIntoView({ block: "nearest" });
-    }
-  }, [isFocused]);
 
   return (
     <div

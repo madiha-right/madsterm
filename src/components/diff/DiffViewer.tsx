@@ -11,11 +11,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({ diff }) => {
   const theme = useThemeStore((s) => s.theme);
 
   if (diff.is_binary) {
-    return (
-      <div style={{ padding: 12, color: theme.textMuted, fontSize: 12 }}>
-        Binary file
-      </div>
-    );
+    return <div style={{ padding: 12, color: theme.textMuted, fontSize: 12 }}>Binary file</div>;
   }
 
   return (
@@ -52,15 +48,15 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({ diff }) => {
             const bgColor = isAdd
               ? theme.diffAddedBg
               : isDel
-              ? theme.diffRemovedBg
-              : isHovered
-              ? "rgba(255,255,255,0.02)"
-              : "transparent";
+                ? theme.diffRemovedBg
+                : isHovered
+                  ? "rgba(255,255,255,0.02)"
+                  : "transparent";
             const textColor = isAdd
               ? theme.diffAddedText
               : isDel
-              ? theme.diffRemovedText
-              : theme.text;
+                ? theme.diffRemovedText
+                : theme.text;
 
             return (
               <div
@@ -119,8 +115,8 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({ diff }) => {
                     color: isAdd
                       ? theme.diffAddedText
                       : isDel
-                      ? theme.diffRemovedText
-                      : "transparent",
+                        ? theme.diffRemovedText
+                        : "transparent",
                     userSelect: "none",
                     fontWeight: 600,
                     opacity: isAdd || isDel ? 0.9 : 0,

@@ -63,23 +63,19 @@ const DiffFileItem: React.FC<{
         backgroundColor: isFocused
           ? theme.explorerSelected
           : isSelected
-          ? theme.bgHover
-          : "transparent",
+            ? theme.bgHover
+            : "transparent",
         color: theme.text,
         fontSize: 12,
         fontFamily: "inherit",
         transition: "background-color 0.08s",
-        borderLeft: isFocused
-          ? `2px solid ${theme.accent}`
-          : "2px solid transparent",
+        borderLeft: isFocused ? `2px solid ${theme.accent}` : "2px solid transparent",
       }}
       onMouseEnter={(e) => {
-        if (!isFocused)
-          e.currentTarget.style.backgroundColor = theme.explorerHover;
+        if (!isFocused) e.currentTarget.style.backgroundColor = theme.explorerHover;
       }}
       onMouseLeave={(e) => {
-        if (!isFocused && !isSelected)
-          e.currentTarget.style.backgroundColor = "transparent";
+        if (!isFocused && !isSelected) e.currentTarget.style.backgroundColor = "transparent";
       }}
     >
       {getStatusIcon(change.status, theme)}

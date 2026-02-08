@@ -1,11 +1,10 @@
+use portable_pty::{native_pty_system, Child, CommandBuilder, MasterPty, PtySize};
 use std::collections::HashMap;
 use std::io::{Read, Write};
-use portable_pty::{native_pty_system, CommandBuilder, PtySize, MasterPty, Child};
 use tauri::{AppHandle, Emitter};
 use uuid::Uuid;
 
 pub struct PtySession {
-    pub id: String,
     pub master: Box<dyn MasterPty + Send>,
     pub writer: Box<dyn Write + Send>,
     pub child: Box<dyn Child + Send + Sync>,
@@ -71,19 +70,63 @@ impl PtyManager {
         std::thread::spawn(move || {
             let mut reader = reader;
             let mut buf = [0u8; 16384];
+            // Buffer for incomplete UTF-8 sequences at chunk boundaries
+            let mut utf8_remainder: Vec<u8> = Vec::new();
+            let output_event = format!("pty-output-{}", sid);
+            let exit_event = format!("pty-exit-{}", sid);
+
             loop {
                 match reader.read(&mut buf) {
                     Ok(0) => {
-                        let _ = handle.emit(&format!("pty-exit-{}", sid), ());
+                        // Flush any remaining bytes as lossy before exit
+                        if !utf8_remainder.is_empty() {
+                            let data = String::from_utf8_lossy(&utf8_remainder).to_string();
+                            let _ = handle.emit(&output_event, &data);
+                        }
+                        let _ = handle.emit(&exit_event, ());
                         break;
                     }
                     Ok(n) => {
-                        // Use lossy conversion - terminal data may contain partial UTF-8
-                        let data = String::from_utf8_lossy(&buf[..n]).to_string();
-                        let _ = handle.emit(&format!("pty-output-{}", sid), &data);
+                        // Prepend any leftover bytes from previous read
+                        let chunk = if utf8_remainder.is_empty() {
+                            &buf[..n]
+                        } else {
+                            utf8_remainder.extend_from_slice(&buf[..n]);
+                            utf8_remainder.as_slice()
+                        };
+
+                        // Find the last valid UTF-8 boundary
+                        match std::str::from_utf8(chunk) {
+                            Ok(s) => {
+                                let _ = handle.emit(&output_event, s);
+                                utf8_remainder.clear();
+                            }
+                            Err(e) => {
+                                let valid_up_to = e.valid_up_to();
+                                // Emit the valid portion
+                                if valid_up_to > 0 {
+                                    // Safety: we know bytes up to valid_up_to are valid UTF-8
+                                    let valid = unsafe {
+                                        std::str::from_utf8_unchecked(&chunk[..valid_up_to])
+                                    };
+                                    let _ = handle.emit(&output_event, valid);
+                                }
+                                // Keep the incomplete tail for next read
+                                let remainder = &chunk[valid_up_to..];
+                                if remainder.len() > 4 {
+                                    // More than max UTF-8 sequence length — this isn't
+                                    // just an incomplete sequence, emit lossy and clear
+                                    let data = String::from_utf8_lossy(remainder).to_string();
+                                    let _ = handle.emit(&output_event, &data);
+                                    utf8_remainder.clear();
+                                } else {
+                                    utf8_remainder = remainder.to_vec();
+                                }
+                            }
+                        }
                     }
                     Err(_) => {
-                        let _ = handle.emit(&format!("pty-exit-{}", sid), ());
+                        let _ = handle.emit(&exit_event, ());
                         break;
                     }
                 }
@@ -91,7 +134,6 @@ impl PtyManager {
         });
 
         let session = PtySession {
-            id: session_id.clone(),
             master: pair.master,
             writer,
             child,

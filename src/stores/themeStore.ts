@@ -13,7 +13,9 @@ function loadSavedThemeId(): ThemeId {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved && saved in THEMES) return saved as ThemeId;
-  } catch {}
+  } catch {
+    // localStorage unavailable, use default
+  }
   return "paradigm";
 }
 
