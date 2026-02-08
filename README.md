@@ -12,13 +12,29 @@ A fast, keyboard-driven terminal emulator with built-in file explorer and git di
 - **Quick file search** with fuzzy matching
 - **Keyboard-first workflow** — every action has a shortcut
 
-## Prerequisites
+## Install
+
+### Homebrew (macOS)
+
+```bash
+brew install --cask madiha-right/tap/madsterm
+```
+
+After installation, open Madsterm from your Applications folder or run `open -a Madsterm` from the terminal.
+
+### Manual Download
+
+Download the latest `.dmg` from the [Releases](https://github.com/madiha-right/madsterm/releases) page, open it, and drag Madsterm to your Applications folder.
+
+## Development
+
+### Prerequisites
 
 - [Node.js](https://nodejs.org/) >= 18
 - [Rust](https://rustup.rs/) (stable)
 - [Tauri 2 CLI](https://tauri.app/) (`npm install -g @tauri-apps/cli`)
 
-## Install & Run
+### Build & Run
 
 ```bash
 # Install dependencies

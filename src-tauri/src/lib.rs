@@ -25,6 +25,7 @@ pub fn run() {
             commands::fs_commands::get_cwd,
             commands::fs_commands::get_home_dir,
             commands::fs_commands::get_shell_name,
+            commands::fs_commands::search_in_files,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

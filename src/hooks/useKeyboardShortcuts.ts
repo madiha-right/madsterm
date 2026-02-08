@@ -15,6 +15,9 @@ export function useKeyboardShortcuts(
   const { tabs, activeTabId, setActiveTab, reopenLastClosedTab, addTab } = useTabStore();
   const { increaseFontSize, decreaseFontSize, resetFontSize } = useSettingsStore();
   const setIsSearching = useFileExplorerStore((s) => s.setIsSearching);
+  const toggleCaseSensitive = useFileExplorerStore((s) => s.toggleCaseSensitive);
+  const toggleWholeWord = useFileExplorerStore((s) => s.toggleWholeWord);
+  const toggleUseRegex = useFileExplorerStore((s) => s.toggleUseRegex);
 
   // Use refs for frequently-changing values to avoid recreating the listener
   const tabsRef = useRef(tabs);
@@ -98,8 +101,17 @@ export function useKeyboardShortcuts(
       // Cmd+Shift+E -> toggle file explorer (alias)
       if (e.shiftKey && !e.altKey && (e.key === "E" || e.key === "e")) {
         e.preventDefault();
-        toggleLeftPanel();
-        setIsSearching(false);
+        if (usePanelStore.getState().leftPanelVisible) {
+          // Panel already open — if searching, switch to explorer mode; otherwise close
+          if (useFileExplorerStore.getState().isSearching) {
+            setIsSearching(false);
+          } else {
+            toggleLeftPanel();
+          }
+        } else {
+          toggleLeftPanel();
+          setIsSearching(false);
+        }
         return;
       }
 
@@ -110,6 +122,27 @@ export function useKeyboardShortcuts(
           toggleLeftPanel();
         }
         setIsSearching(true);
+        return;
+      }
+
+      // Alt+Cmd+C -> Toggle case sensitive search
+      if (e.altKey && !e.shiftKey && e.key.toLowerCase() === "c") {
+        e.preventDefault();
+        toggleCaseSensitive();
+        return;
+      }
+
+      // Alt+Cmd+W -> Toggle whole word search
+      if (e.altKey && !e.shiftKey && e.key.toLowerCase() === "w") {
+        e.preventDefault();
+        toggleWholeWord();
+        return;
+      }
+
+      // Alt+Cmd+R -> Toggle regex search
+      if (e.altKey && !e.shiftKey && e.key.toLowerCase() === "r") {
+        e.preventDefault();
+        toggleUseRegex();
         return;
       }
 
@@ -194,5 +227,8 @@ export function useKeyboardShortcuts(
     decreaseFontSize,
     resetFontSize,
     setIsSearching,
+    toggleCaseSensitive,
+    toggleWholeWord,
+    toggleUseRegex,
   ]);
 }

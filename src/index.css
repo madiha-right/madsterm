@@ -57,15 +57,19 @@ body {
 .resize-handle {
   width: 1px;
   background: #1a1a1a;
-  cursor: col-resize;
-  transition:
-    background 0.2s ease,
-    box-shadow 0.2s ease;
+  position: relative;
 }
 
-.resize-handle:hover,
-.resize-handle[data-resize-handle-active] {
-  background: #333333;
+/* Invisible wider hit zone for cursor */
+.resize-handle::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -4px;
+  right: -4px;
+  cursor: col-resize;
+  z-index: 1;
 }
 
 /* Selection styling */
