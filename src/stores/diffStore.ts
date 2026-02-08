@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { FileChange, FileDiff } from "../types";
+import type { FileChange, FileDiff } from "../types";
 
 interface DiffStore {
   changes: FileChange[];

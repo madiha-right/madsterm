@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { FileNode, SearchResults } from "../types";
+import type { FileNode, SearchResults } from "../types";
 
 interface FileExplorerStore {
   rootPath: string | null;

@@ -1,20 +1,20 @@
-import { useRef } from "react";
 import {
+  ChevronDown,
+  ChevronRight,
+  File,
+  FileArchive,
+  FileCode,
+  FileImage,
+  FileJson,
+  FileText,
   Folder,
   FolderOpen,
-  File,
-  FileJson,
-  FileCode,
-  FileText,
-  FileImage,
-  FileArchive,
   Lock,
-  ChevronRight,
-  ChevronDown,
 } from "lucide-react";
-import { FileNode } from "../../types";
+import { useRef } from "react";
 import { useThemeStore } from "../../stores/themeStore";
 import type { AppTheme } from "../../theme/themes";
+import type { FileNode } from "../../types";
 
 interface FileTreeItemProps {
   node: FileNode;

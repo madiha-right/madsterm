@@ -1,9 +1,9 @@
+import { FolderOpen, GitBranch, GitCompareArrows, Info, Settings, Terminal } from "lucide-react";
 import { useEffect, useState } from "react";
-import { FolderOpen, GitCompareArrows, GitBranch, Terminal, Settings, Info } from "lucide-react";
+import { getCwd, getShellName } from "../../hooks/useFileExplorer";
+import { fetchGitBranch } from "../../hooks/useGitDiff";
 import { usePanelStore } from "../../stores/panelStore";
 import { useThemeStore } from "../../stores/themeStore";
-import { fetchGitBranch } from "../../hooks/useGitDiff";
-import { getCwd, getShellName } from "../../hooks/useFileExplorer";
 import { ThemePicker } from "./ThemePicker";
 
 export const StatusBar: React.FC = () => {

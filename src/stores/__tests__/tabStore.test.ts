@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { useTabStore } from "../tabStore";
 
 describe("tabStore", () => {
@@ -86,7 +86,7 @@ describe("tabStore", () => {
     const reopened = useTabStore.getState().reopenLastClosedTab();
 
     expect(reopened).not.toBeNull();
-    expect(reopened!.id).toBe("tab1");
+    expect(reopened?.id).toBe("tab1");
     expect(useTabStore.getState().recentlyClosedTabs).toHaveLength(0);
   });
 

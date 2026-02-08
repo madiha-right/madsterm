@@ -1,21 +1,21 @@
-import { useEffect, useCallback, useRef, useState } from "react";
 import {
+  ChevronDown,
+  ChevronRight,
+  Copy,
   GitCompareArrows,
+  Inbox,
   RefreshCw,
   X,
-  Inbox,
-  ChevronRight,
-  ChevronDown,
-  Copy,
 } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { getHomeDir } from "../../hooks/useFileExplorer";
+import { fetchGitDiff, fetchGitStatus } from "../../hooks/useGitDiff";
 import { useDiffStore } from "../../stores/diffStore";
 import { usePanelStore } from "../../stores/panelStore";
 import { useTabStore } from "../../stores/tabStore";
 import { useThemeStore } from "../../stores/themeStore";
-import { fetchGitStatus, fetchGitDiff } from "../../hooks/useGitDiff";
-import { getHomeDir } from "../../hooks/useFileExplorer";
+import type { FileChange } from "../../types";
 import { DiffViewer } from "./DiffViewer";
-import { FileChange } from "../../types";
 
 function getFileName(path: string) {
   return path.split("/").pop() || path;
@@ -24,7 +24,7 @@ function getFileName(path: string) {
 function getFileDir(path: string) {
   const parts = path.split("/");
   parts.pop();
-  return parts.length > 0 ? parts.join("/") + "/" : "";
+  return parts.length > 0 ? `${parts.join("/")}/` : "";
 }
 
 export const DiffPanel: React.FC = () => {
@@ -114,7 +114,7 @@ export const DiffPanel: React.FC = () => {
   // Immediate refresh on tab switch
   useEffect(() => {
     loadStatus();
-  }, [activeTab?.cwd, loadStatus]);
+  }, [loadStatus]);
 
   // Load diff when a file is expanded — read from store directly to avoid stale closures
   const handleToggleFile = useCallback(

@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from "react";
-import { Palette, Check } from "lucide-react";
+import { Check, Palette } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { useThemeStore } from "../../stores/themeStore";
 import { THEME_LIST } from "../../theme/themes";
 

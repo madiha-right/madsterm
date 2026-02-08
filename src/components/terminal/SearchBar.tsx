@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect, useCallback } from "react";
-import { X, ChevronUp, ChevronDown, CaseSensitive, Regex } from "lucide-react";
-import { SearchAddon } from "@xterm/addon-search";
+import type { SearchAddon } from "@xterm/addon-search";
+import { CaseSensitive, ChevronDown, ChevronUp, Regex, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useThemeStore } from "../../stores/themeStore";
 
 interface SearchBarProps {
@@ -46,7 +46,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ searchAddon, focusTrigger,
       return;
     }
     doSearch("next");
-  }, [query, caseSensitive, useRegex]);
+  }, [query, doSearch, searchAddon]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Escape") {
@@ -160,7 +160,14 @@ export const SearchBar: React.FC<SearchBarProps> = ({ searchAddon, focusTrigger,
       </button>
 
       {/* Separator */}
-      <div style={{ width: 1, height: 18, backgroundColor: theme.border, margin: "0 4px" }} />
+      <div
+        style={{
+          width: 1,
+          height: 18,
+          backgroundColor: theme.border,
+          margin: "0 4px",
+        }}
+      />
 
       {/* Nav buttons */}
       <button

@@ -1,9 +1,9 @@
-import { useEffect, useRef } from "react";
-import { usePanelStore } from "../stores/panelStore";
-import { useTabStore } from "../stores/tabStore";
-import { useSettingsStore } from "../stores/settingsStore";
-import { useFileExplorerStore } from "../stores/fileExplorerStore";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { useEffect, useRef } from "react";
+import { useFileExplorerStore } from "../stores/fileExplorerStore";
+import { usePanelStore } from "../stores/panelStore";
+import { useSettingsStore } from "../stores/settingsStore";
+import { useTabStore } from "../stores/tabStore";
 
 export function useKeyboardShortcuts(
   onNewTab: () => void,
@@ -177,7 +177,7 @@ export function useKeyboardShortcuts(
       // Cmd+1-9 -> switch to tab N
       if (!e.shiftKey && !e.altKey && e.key >= "1" && e.key <= "9") {
         e.preventDefault();
-        const idx = parseInt(e.key) - 1;
+        const idx = parseInt(e.key, 10) - 1;
         const currentTabs = tabsRef.current;
         if (idx < currentTabs.length) {
           setActiveTab(currentTabs[idx].id);

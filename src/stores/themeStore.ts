@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { THEMES, type AppTheme, type ThemeId } from "../theme/themes";
+import { type AppTheme, THEMES, type ThemeId } from "../theme/themes";
 
 interface ThemeStore {
   themeId: ThemeId;

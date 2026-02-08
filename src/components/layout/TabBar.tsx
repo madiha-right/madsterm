@@ -1,5 +1,5 @@
-import { useRef, useState, useCallback } from "react";
-import { X, Plus } from "lucide-react";
+import { Plus, X } from "lucide-react";
+import { useCallback, useRef, useState } from "react";
 import { useTabStore } from "../../stores/tabStore";
 import { useThemeStore } from "../../stores/themeStore";
 

@@ -1,10 +1,10 @@
-import { useState, useRef, useEffect } from "react";
-import { useTabStore } from "../../stores/tabStore";
+import type { SearchAddon } from "@xterm/addon-search";
+import { useEffect, useRef, useState } from "react";
 import { usePanelStore } from "../../stores/panelStore";
+import { useTabStore } from "../../stores/tabStore";
 import { useThemeStore } from "../../stores/themeStore";
-import { TerminalInstance } from "./TerminalInstance";
 import { SearchBar } from "./SearchBar";
-import { SearchAddon } from "@xterm/addon-search";
+import { TerminalInstance } from "./TerminalInstance";
 
 const SHORTCUTS = [
   { keys: "T", label: "New Tab" },

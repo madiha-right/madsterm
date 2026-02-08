@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { listen, UnlistenFn } from "@tauri-apps/api/event";
+import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 
 export async function createPtySession(cols: number, rows: number, cwd?: string): Promise<string> {
   return invoke<string>("pty_create", { cols, rows, cwd: cwd || null });

@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { FileNode, SearchResults } from "../types";
+import type { FileNode, SearchResults } from "../types";
 
 export async function readDirectory(path: string, depth?: number): Promise<FileNode> {
   return invoke<FileNode>("read_directory", { path, depth: depth ?? null });
