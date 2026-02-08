@@ -1,16 +1,29 @@
 import { useEffect, useState } from "react";
-import { FolderOpen, GitCompareArrows, GitBranch, Terminal, Settings } from "lucide-react";
+import { FolderOpen, GitCompareArrows, GitBranch, Terminal, Settings, Info } from "lucide-react";
 import { usePanelStore } from "../../stores/panelStore";
 import { useThemeStore } from "../../stores/themeStore";
 import { fetchGitBranch } from "../../hooks/useGitDiff";
-import { getCwd } from "../../hooks/useFileExplorer";
+import { getCwd, getShellName } from "../../hooks/useFileExplorer";
 import { ThemePicker } from "./ThemePicker";
 
 export const StatusBar: React.FC = () => {
-  const { toggleLeftPanel, toggleRightPanel, leftPanelVisible, rightPanelVisible, setSettingsOpen } =
-    usePanelStore();
+  const {
+    toggleLeftPanel,
+    toggleRightPanel,
+    leftPanelVisible,
+    rightPanelVisible,
+    setSettingsOpen,
+    setAboutOpen,
+  } = usePanelStore();
   const theme = useThemeStore((s) => s.theme);
   const [branch, setBranch] = useState<string | null>(null);
+  const [shellName, setShellName] = useState<string>("sh");
+
+  useEffect(() => {
+    getShellName()
+      .then(setShellName)
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const loadBranch = async () => {
@@ -59,6 +72,8 @@ export const StatusBar: React.FC = () => {
 
   return (
     <div
+      role="status"
+      aria-label="Status bar"
       style={{
         display: "flex",
         alignItems: "center",
@@ -77,6 +92,8 @@ export const StatusBar: React.FC = () => {
         <button
           onClick={toggleLeftPanel}
           title="Toggle Explorer (Cmd+B)"
+          aria-label="Toggle file explorer"
+          aria-pressed={leftPanelVisible}
           style={buttonStyle(leftPanelVisible)}
           onMouseEnter={(e) => {
             e.currentTarget.style.backgroundColor = theme.bgHover;
@@ -91,6 +108,8 @@ export const StatusBar: React.FC = () => {
         <button
           onClick={toggleRightPanel}
           title="Toggle Changes (Cmd+Shift+=)"
+          aria-label="Toggle changes panel"
+          aria-pressed={rightPanelVisible}
           style={buttonStyle(rightPanelVisible)}
           onMouseEnter={(e) => {
             e.currentTarget.style.backgroundColor = theme.bgHover;
@@ -127,6 +146,7 @@ export const StatusBar: React.FC = () => {
         <button
           onClick={() => setSettingsOpen(true)}
           title="Settings (Cmd+,)"
+          aria-label="Open settings"
           style={buttonStyle(false)}
           onMouseEnter={(e) => {
             e.currentTarget.style.backgroundColor = theme.bgHover;
@@ -136,6 +156,21 @@ export const StatusBar: React.FC = () => {
           }}
         >
           <Settings size={13} />
+        </button>
+
+        <button
+          onClick={() => setAboutOpen(true)}
+          title="About Madsterm"
+          aria-label="About Madsterm"
+          style={buttonStyle(false)}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = theme.bgHover;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = "transparent";
+          }}
+        >
+          <Info size={13} />
         </button>
       </div>
 
@@ -151,7 +186,7 @@ export const StatusBar: React.FC = () => {
           }}
         >
           <Terminal size={11} />
-          <span>zsh</span>
+          <span>{shellName}</span>
         </div>
 
         {branch && (

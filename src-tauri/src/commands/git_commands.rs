@@ -1,4 +1,4 @@
-use git2::{Delta, DiffOptions, Repository, StatusOptions};
+use git2::{DiffOptions, Repository, StatusOptions};
 use serde::Serialize;
 
 #[derive(Serialize, Clone)]
@@ -35,17 +35,6 @@ pub struct FileDiff {
     pub is_binary: bool,
 }
 
-fn delta_to_status(delta: Delta) -> &'static str {
-    match delta {
-        Delta::Added => "added",
-        Delta::Deleted => "deleted",
-        Delta::Modified => "modified",
-        Delta::Renamed => "renamed",
-        Delta::Copied => "copied",
-        _ => "modified",
-    }
-}
-
 #[tauri::command]
 pub fn git_branch(cwd: String) -> Result<String, String> {
     let repo = Repository::discover(&cwd).map_err(|e| e.to_string())?;
@@ -64,17 +53,44 @@ pub fn git_branch(cwd: String) -> Result<String, String> {
 pub fn git_status(cwd: String) -> Result<Vec<FileChange>, String> {
     let repo = Repository::discover(&cwd).map_err(|e| e.to_string())?;
     let mut opts = StatusOptions::new();
-    opts.include_untracked(true)
-        .recurse_untracked_dirs(true);
+    opts.include_untracked(true).recurse_untracked_dirs(true);
 
     let statuses = repo.statuses(Some(&mut opts)).map_err(|e| e.to_string())?;
+
+    // Compute per-file addition/deletion stats from diffs
+    let mut staged_stats: std::collections::HashMap<String, (usize, usize)> =
+        std::collections::HashMap::new();
+    let mut unstaged_stats: std::collections::HashMap<String, (usize, usize)> =
+        std::collections::HashMap::new();
+
+    // Staged diff stats
+    let head = repo.head().ok().and_then(|h| h.peel_to_tree().ok());
+    if let Ok(diff) = repo.diff_tree_to_index(head.as_ref(), None, None) {
+        let stats_result = collect_file_stats(&diff);
+        for (path, adds, dels) in stats_result {
+            staged_stats.insert(path, (adds, dels));
+        }
+    }
+
+    // Unstaged diff stats
+    if let Ok(diff) = repo.diff_index_to_workdir(None, None) {
+        let stats_result = collect_file_stats(&diff);
+        for (path, adds, dels) in stats_result {
+            unstaged_stats.insert(path, (adds, dels));
+        }
+    }
+
     let mut changes = Vec::new();
 
     for entry in statuses.iter() {
         let path = entry.path().unwrap_or("").to_string();
         let st = entry.status();
 
-        if st.is_index_new() || st.is_index_modified() || st.is_index_deleted() || st.is_index_renamed() {
+        if st.is_index_new()
+            || st.is_index_modified()
+            || st.is_index_deleted()
+            || st.is_index_renamed()
+        {
             let status = if st.is_index_new() {
                 "added"
             } else if st.is_index_deleted() {
@@ -84,11 +100,12 @@ pub fn git_status(cwd: String) -> Result<Vec<FileChange>, String> {
             } else {
                 "modified"
             };
+            let (additions, deletions) = staged_stats.get(&path).copied().unwrap_or((0, 0));
             changes.push(FileChange {
                 path: path.clone(),
                 status: status.to_string(),
-                additions: 0,
-                deletions: 0,
+                additions,
+                deletions,
                 is_staged: true,
             });
         }
@@ -103,17 +120,53 @@ pub fn git_status(cwd: String) -> Result<Vec<FileChange>, String> {
             } else {
                 "modified"
             };
+            let (additions, deletions) = unstaged_stats.get(&path).copied().unwrap_or((0, 0));
             changes.push(FileChange {
                 path: path.clone(),
                 status: status.to_string(),
-                additions: 0,
-                deletions: 0,
+                additions,
+                deletions,
                 is_staged: false,
             });
         }
     }
 
     Ok(changes)
+}
+
+fn collect_file_stats(diff: &git2::Diff) -> Vec<(String, usize, usize)> {
+    let mut results = Vec::new();
+    for delta_idx in 0..diff.deltas().len() {
+        let delta = diff.get_delta(delta_idx).unwrap();
+        let path = delta
+            .new_file()
+            .path()
+            .or_else(|| delta.old_file().path())
+            .map(|p| p.to_string_lossy().to_string())
+            .unwrap_or_default();
+
+        let mut adds = 0usize;
+        let mut dels = 0usize;
+
+        if let Ok(Some(patch)) = git2::Patch::from_diff(diff, delta_idx) {
+            for hunk_idx in 0..patch.num_hunks() {
+                if let Ok(num_lines) = patch.num_lines_in_hunk(hunk_idx) {
+                    for line_idx in 0..num_lines {
+                        if let Ok(line) = patch.line_in_hunk(hunk_idx, line_idx) {
+                            match line.origin() {
+                                '+' => adds += 1,
+                                '-' => dels += 1,
+                                _ => {}
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        results.push((path, adds, dels));
+    }
+    results
 }
 
 #[tauri::command]
@@ -174,9 +227,13 @@ fn collect_diffs(diff: &git2::Diff, out: &mut Vec<FileDiff>) -> Result<(), Strin
                     let header = String::from_utf8_lossy(hunk.header()).to_string();
                     let mut lines = Vec::new();
 
-                    let num_lines = patch.num_lines_in_hunk(hunk_idx).map_err(|e| e.to_string())?;
+                    let num_lines = patch
+                        .num_lines_in_hunk(hunk_idx)
+                        .map_err(|e| e.to_string())?;
                     for line_idx in 0..num_lines {
-                        let line = patch.line_in_hunk(hunk_idx, line_idx).map_err(|e| e.to_string())?;
+                        let line = patch
+                            .line_in_hunk(hunk_idx, line_idx)
+                            .map_err(|e| e.to_string())?;
                         let content = String::from_utf8_lossy(line.content()).to_string();
                         let origin = match line.origin() {
                             '+' => "+".to_string(),

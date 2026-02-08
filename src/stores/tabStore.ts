@@ -32,7 +32,7 @@ export const useTabStore = create<TabStore>((set, get) => ({
       const filtered = state.tabs.filter((t) => t.id !== tabId);
       const newActive =
         state.activeTabId === tabId
-          ? filtered[filtered.length - 1]?.id ?? null
+          ? (filtered[filtered.length - 1]?.id ?? null)
           : state.activeTabId;
       return {
         tabs: filtered,
@@ -63,9 +63,7 @@ export const useTabStore = create<TabStore>((set, get) => ({
     set((state) => {
       const folderName = cwd.split("/").filter(Boolean).pop() || "Terminal";
       return {
-        tabs: state.tabs.map((t) =>
-          t.id === tabId ? { ...t, cwd, title: folderName } : t
-        ),
+        tabs: state.tabs.map((t) => (t.id === tabId ? { ...t, cwd, title: folderName } : t)),
       };
     }),
 

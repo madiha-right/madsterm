@@ -762,11 +762,11 @@ const rosePine: AppTheme = {
 };
 
 export const THEMES: Record<ThemeId, AppTheme> = {
-  "paradigm": paradigm,
+  paradigm: paradigm,
   "madsterm-dark": madstermDark,
   "one-dark": oneDark,
-  "dracula": dracula,
-  "nord": nord,
+  dracula: dracula,
+  nord: nord,
   "solarized-dark": solarizedDark,
   "catppuccin-mocha": catppuccinMocha,
   "tokyo-night": tokyoNight,
@@ -776,15 +776,59 @@ export const THEMES: Record<ThemeId, AppTheme> = {
 };
 
 export const THEME_LIST: ThemeMeta[] = [
-  { id: "paradigm", name: "Paradigm", previewColors: ["#000000", "#ffffff", "#c65f5f", "#5fc65f", "#5f8cc6"] },
-  { id: "madsterm-dark", name: "Madsterm Dark", previewColors: ["#090b0f", "#FF6A00", "#e06c75", "#98c379", "#61afef"] },
-  { id: "one-dark", name: "One Dark", previewColors: ["#282c34", "#61afef", "#e06c75", "#98c379", "#c678dd"] },
-  { id: "dracula", name: "Dracula", previewColors: ["#282a36", "#bd93f9", "#ff5555", "#50fa7b", "#ff79c6"] },
-  { id: "nord", name: "Nord", previewColors: ["#2e3440", "#88c0d0", "#bf616a", "#a3be8c", "#b48ead"] },
-  { id: "solarized-dark", name: "Solarized Dark", previewColors: ["#002b36", "#2aa198", "#dc322f", "#859900", "#268bd2"] },
-  { id: "catppuccin-mocha", name: "Catppuccin Mocha", previewColors: ["#1e1e2e", "#cba6f7", "#f38ba8", "#a6e3a1", "#89b4fa"] },
-  { id: "tokyo-night", name: "Tokyo Night", previewColors: ["#1a1b26", "#7aa2f7", "#f7768e", "#9ece6a", "#bb9af7"] },
-  { id: "gruvbox-dark", name: "Gruvbox Dark", previewColors: ["#282828", "#fe8019", "#fb4934", "#b8bb26", "#83a598"] },
-  { id: "github-dark", name: "GitHub Dark", previewColors: ["#0d1117", "#58a6ff", "#f85149", "#3fb950", "#bc8cff"] },
-  { id: "rose-pine", name: "Rose Pine", previewColors: ["#191724", "#ebbcba", "#eb6f92", "#9ccfd8", "#c4a7e7"] },
+  {
+    id: "paradigm",
+    name: "Paradigm",
+    previewColors: ["#000000", "#ffffff", "#c65f5f", "#5fc65f", "#5f8cc6"],
+  },
+  {
+    id: "madsterm-dark",
+    name: "Madsterm Dark",
+    previewColors: ["#090b0f", "#FF6A00", "#e06c75", "#98c379", "#61afef"],
+  },
+  {
+    id: "one-dark",
+    name: "One Dark",
+    previewColors: ["#282c34", "#61afef", "#e06c75", "#98c379", "#c678dd"],
+  },
+  {
+    id: "dracula",
+    name: "Dracula",
+    previewColors: ["#282a36", "#bd93f9", "#ff5555", "#50fa7b", "#ff79c6"],
+  },
+  {
+    id: "nord",
+    name: "Nord",
+    previewColors: ["#2e3440", "#88c0d0", "#bf616a", "#a3be8c", "#b48ead"],
+  },
+  {
+    id: "solarized-dark",
+    name: "Solarized Dark",
+    previewColors: ["#002b36", "#2aa198", "#dc322f", "#859900", "#268bd2"],
+  },
+  {
+    id: "catppuccin-mocha",
+    name: "Catppuccin Mocha",
+    previewColors: ["#1e1e2e", "#cba6f7", "#f38ba8", "#a6e3a1", "#89b4fa"],
+  },
+  {
+    id: "tokyo-night",
+    name: "Tokyo Night",
+    previewColors: ["#1a1b26", "#7aa2f7", "#f7768e", "#9ece6a", "#bb9af7"],
+  },
+  {
+    id: "gruvbox-dark",
+    name: "Gruvbox Dark",
+    previewColors: ["#282828", "#fe8019", "#fb4934", "#b8bb26", "#83a598"],
+  },
+  {
+    id: "github-dark",
+    name: "GitHub Dark",
+    previewColors: ["#0d1117", "#58a6ff", "#f85149", "#3fb950", "#bc8cff"],
+  },
+  {
+    id: "rose-pine",
+    name: "Rose Pine",
+    previewColors: ["#191724", "#ebbcba", "#eb6f92", "#9ccfd8", "#c4a7e7"],
+  },
 ];

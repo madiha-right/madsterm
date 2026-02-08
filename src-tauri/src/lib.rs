@@ -1,8 +1,8 @@
-mod pty_manager;
 mod commands;
+mod pty_manager;
 
-use std::sync::Arc;
 use parking_lot::Mutex;
+use std::sync::Arc;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -10,6 +10,7 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(pty_state)
         .invoke_handler(tauri::generate_handler![
             commands::pty_commands::pty_create,
@@ -23,6 +24,7 @@ pub fn run() {
             commands::fs_commands::open_file,
             commands::fs_commands::get_cwd,
             commands::fs_commands::get_home_dir,
+            commands::fs_commands::get_shell_name,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

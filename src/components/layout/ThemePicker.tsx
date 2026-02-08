@@ -148,9 +148,7 @@ export const ThemePicker: React.FC = () => {
                   <span style={{ flex: 1 }}>{t.name}</span>
 
                   {/* Checkmark */}
-                  {isActive && (
-                    <Check size={14} color={theme.accent} strokeWidth={2.5} />
-                  )}
+                  {isActive && <Check size={14} color={theme.accent} strokeWidth={2.5} />}
                 </button>
               );
             })}

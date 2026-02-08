@@ -130,10 +130,12 @@ export const TerminalPanel: React.FC = () => {
   const [focusTrigger, setFocusTrigger] = useState(0);
   const searchAddonRef = useRef<SearchAddon | null>(null);
 
-  // Listen for Cmd+F to show search
+  // Listen for Cmd+F (macOS) / Ctrl+F (Win/Linux) to show search
   useEffect(() => {
+    const isMac = navigator.platform.includes("Mac");
     const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === "f") {
+      const meta = isMac ? e.metaKey : e.ctrlKey;
+      if (meta && !e.shiftKey && !e.altKey && e.key.toLowerCase() === "f") {
         e.preventDefault();
         setSearchVisible(true);
         setFocusTrigger((n) => n + 1);

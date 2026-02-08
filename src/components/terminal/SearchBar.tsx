@@ -36,7 +36,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ searchAddon, focusTrigger,
         searchAddon.findPrevious(query, options);
       }
     },
-    [searchAddon, query, caseSensitive, useRegex]
+    [searchAddon, query, caseSensitive, useRegex],
   );
 
   // Search on query/option changes
@@ -167,8 +167,12 @@ export const SearchBar: React.FC<SearchBarProps> = ({ searchAddon, focusTrigger,
         onClick={() => doSearch("previous")}
         style={navBtnStyle}
         title="Previous Match (Shift+Enter)"
-        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme.bgHover; }}
-        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = theme.bgHover;
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = "transparent";
+        }}
       >
         <ChevronUp size={14} />
       </button>
@@ -177,8 +181,12 @@ export const SearchBar: React.FC<SearchBarProps> = ({ searchAddon, focusTrigger,
         onClick={() => doSearch("next")}
         style={navBtnStyle}
         title="Next Match (Enter)"
-        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme.bgHover; }}
-        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = theme.bgHover;
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = "transparent";
+        }}
       >
         <ChevronDown size={14} />
       </button>
@@ -191,8 +199,12 @@ export const SearchBar: React.FC<SearchBarProps> = ({ searchAddon, focusTrigger,
         }}
         style={navBtnStyle}
         title="Close (Escape)"
-        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme.bgHover; }}
-        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = theme.bgHover;
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = "transparent";
+        }}
       >
         <X size={14} />
       </button>

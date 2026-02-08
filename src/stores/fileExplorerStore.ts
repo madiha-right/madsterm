@@ -69,9 +69,7 @@ export const useFileExplorerStore = create<FileExplorerStore>((set) => ({
 
   setSearchQuery: (query) => set({ searchQuery: query }),
 
-  setIsSearching: (searching) =>
-    set({ isSearching: searching, searchQuery: searching ? "" : "" }),
+  setIsSearching: (searching) => set({ isSearching: searching, searchQuery: searching ? "" : "" }),
 
-  refreshTree: () =>
-    set((state) => ({ refreshFlag: state.refreshFlag + 1 })),
+  refreshTree: () => set((state) => ({ refreshFlag: state.refreshFlag + 1 })),
 }));
