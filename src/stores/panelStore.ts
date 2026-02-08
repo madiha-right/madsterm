@@ -3,15 +3,18 @@ import { create } from "zustand";
 interface PanelStore {
   leftPanelVisible: boolean;
   rightPanelVisible: boolean;
+  settingsOpen: boolean;
   focusedPanel: "terminal" | "explorer" | "diff";
   toggleLeftPanel: () => void;
   toggleRightPanel: () => void;
+  setSettingsOpen: (open: boolean) => void;
   setFocusedPanel: (panel: "terminal" | "explorer" | "diff") => void;
 }
 
 export const usePanelStore = create<PanelStore>((set) => ({
   leftPanelVisible: true,
   rightPanelVisible: false,
+  settingsOpen: false,
   focusedPanel: "terminal",
 
   toggleLeftPanel: () =>
@@ -32,5 +35,6 @@ export const usePanelStore = create<PanelStore>((set) => ({
       };
     }),
 
+  setSettingsOpen: (open) => set({ settingsOpen: open }),
   setFocusedPanel: (panel) => set({ focusedPanel: panel }),
 }));

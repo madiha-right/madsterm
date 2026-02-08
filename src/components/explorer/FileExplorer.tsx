@@ -504,7 +504,7 @@ export const FileExplorer: React.FC = () => {
                 style={{
                   width: 14,
                   height: 14,
-                  borderRadius: 3,
+                  borderRadius: 0,
                   backgroundColor: theme.bgActive,
                   animation: "skeleton-pulse 1.2s ease-in-out infinite",
                   animationDelay: `${i * 0.08}s`,
@@ -513,7 +513,7 @@ export const FileExplorer: React.FC = () => {
               <div
                 style={{
                   height: 12,
-                  borderRadius: 4,
+                  borderRadius: 0,
                   backgroundColor: theme.bgActive,
                   width: `${45 + ((i * 17) % 40)}%`,
                   animation: "skeleton-pulse 1.2s ease-in-out infinite",

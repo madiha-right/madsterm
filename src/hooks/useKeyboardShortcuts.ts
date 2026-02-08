@@ -5,7 +5,7 @@ import { useSettingsStore } from "../stores/settingsStore";
 import { useFileExplorerStore } from "../stores/fileExplorerStore";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 
-export function useKeyboardShortcuts(onNewTab: () => void, onCloseTab: () => void) {
+export function useKeyboardShortcuts(onNewTab: () => void, onCloseTab: () => void, onOpenSettings?: () => void) {
   const toggleLeftPanel = usePanelStore((s) => s.toggleLeftPanel);
   const toggleRightPanel = usePanelStore((s) => s.toggleRightPanel);
   const { tabs, activeTabId, setActiveTab, reopenLastClosedTab, addTab } = useTabStore();
@@ -22,6 +22,13 @@ export function useKeyboardShortcuts(onNewTab: () => void, onCloseTab: () => voi
         e.preventDefault();
         const win = getCurrentWindow();
         win.isFullscreen().then(isFs => win.setFullscreen(!isFs));
+        return;
+      }
+
+      // Cmd+, -> Open settings
+      if (!e.shiftKey && !e.altKey && e.key === ",") {
+        e.preventDefault();
+        onOpenSettings?.();
         return;
       }
 
@@ -145,5 +152,5 @@ export function useKeyboardShortcuts(onNewTab: () => void, onCloseTab: () => voi
 
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
-  }, [toggleLeftPanel, toggleRightPanel, onNewTab, onCloseTab, tabs, activeTabId, setActiveTab, reopenLastClosedTab, addTab, increaseFontSize, decreaseFontSize, resetFontSize, setIsSearching]);
+  }, [toggleLeftPanel, toggleRightPanel, onNewTab, onCloseTab, onOpenSettings, tabs, activeTabId, setActiveTab, reopenLastClosedTab, addTab, increaseFontSize, decreaseFontSize, resetFontSize, setIsSearching]);
 }

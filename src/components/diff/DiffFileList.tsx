@@ -112,7 +112,7 @@ const DiffFileItem: React.FC<{
             color: theme.accent,
             backgroundColor: theme.bgActive,
             padding: "1px 5px",
-            borderRadius: 3,
+            borderRadius: 0,
             fontWeight: 600,
             letterSpacing: "0.3px",
             textTransform: "uppercase",

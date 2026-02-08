@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { PanelGroup, Panel, PanelResizeHandle } from "react-resizable-panels";
 import { TabBar } from "./components/layout/TabBar";
 import { StatusBar } from "./components/layout/StatusBar";
+import { SettingsPanel } from "./components/layout/SettingsPanel";
 import { FileExplorer } from "./components/explorer/FileExplorer";
 import { TerminalPanel } from "./components/terminal/TerminalPanel";
 import { DiffPanel } from "./components/diff/DiffPanel";
@@ -18,6 +19,11 @@ export default function App() {
   const { leftPanelVisible, rightPanelVisible } = usePanelStore();
   const { tabs, activeTabId, addTab, removeTab } = useTabStore();
   const theme = useThemeStore((s) => s.theme);
+  const { settingsOpen, setSettingsOpen } = usePanelStore();
+
+  const handleOpenSettings = useCallback(() => {
+    setSettingsOpen(true);
+  }, [setSettingsOpen]);
 
   const handleNewTab = useCallback(() => {
     const id = generateId();
@@ -45,7 +51,7 @@ export default function App() {
     }
   }, []);
 
-  useKeyboardShortcuts(handleNewTab, handleCloseTab);
+  useKeyboardShortcuts(handleNewTab, handleCloseTab, handleOpenSettings);
 
   // Sync body background and CSS variables when theme changes
   useEffect(() => {
@@ -86,7 +92,7 @@ export default function App() {
               </Panel>
               <PanelResizeHandle
                 style={{
-                  width: 2,
+                  width: 1,
                   background: theme.border,
                   cursor: "col-resize",
                   transition: "background 0.15s",
@@ -104,7 +110,7 @@ export default function App() {
             <>
               <PanelResizeHandle
                 style={{
-                  width: 2,
+                  width: 1,
                   background: theme.border,
                   cursor: "col-resize",
                   transition: "background 0.15s",
@@ -126,6 +132,7 @@ export default function App() {
       </div>
 
       <StatusBar />
+      <SettingsPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </div>
   );
 }

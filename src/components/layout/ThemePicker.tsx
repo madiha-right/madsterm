@@ -48,7 +48,7 @@ export const ThemePicker: React.FC = () => {
           color: open ? theme.accent : theme.statusBarText,
           cursor: "pointer",
           padding: "2px 6px",
-          borderRadius: 3,
+          borderRadius: 0,
           height: 20,
           width: 24,
         }}
@@ -74,7 +74,7 @@ export const ThemePicker: React.FC = () => {
             width: 240,
             backgroundColor: theme.bgPanel,
             border: `1px solid ${theme.border}`,
-            borderRadius: 8,
+            borderRadius: 0,
             boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
             overflow: "hidden",
             zIndex: 1000,
@@ -136,7 +136,7 @@ export const ThemePicker: React.FC = () => {
                         style={{
                           width: 12,
                           height: 12,
-                          borderRadius: "50%",
+                          borderRadius: 0,
                           backgroundColor: color,
                           border: i === 0 ? `1px solid ${theme.border}` : "none",
                         }}

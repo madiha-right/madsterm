@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FolderOpen, GitCompareArrows, GitBranch, Terminal } from "lucide-react";
+import { FolderOpen, GitCompareArrows, GitBranch, Terminal, Settings } from "lucide-react";
 import { usePanelStore } from "../../stores/panelStore";
 import { useThemeStore } from "../../stores/themeStore";
 import { fetchGitBranch } from "../../hooks/useGitDiff";
@@ -7,7 +7,7 @@ import { getCwd } from "../../hooks/useFileExplorer";
 import { ThemePicker } from "./ThemePicker";
 
 export const StatusBar: React.FC = () => {
-  const { toggleLeftPanel, toggleRightPanel, leftPanelVisible, rightPanelVisible } =
+  const { toggleLeftPanel, toggleRightPanel, leftPanelVisible, rightPanelVisible, setSettingsOpen } =
     usePanelStore();
   const theme = useThemeStore((s) => s.theme);
   const [branch, setBranch] = useState<string | null>(null);
@@ -113,6 +113,30 @@ export const StatusBar: React.FC = () => {
         />
 
         <ThemePicker />
+
+        {/* Separator */}
+        <div
+          style={{
+            width: 1,
+            height: 14,
+            backgroundColor: theme.border,
+            margin: "0 4px",
+          }}
+        />
+
+        <button
+          onClick={() => setSettingsOpen(true)}
+          title="Settings (Cmd+,)"
+          style={buttonStyle(false)}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = theme.bgHover;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = "transparent";
+          }}
+        >
+          <Settings size={13} />
+        </button>
       </div>
 
       {/* Right side - shell, git branch, encoding */}
