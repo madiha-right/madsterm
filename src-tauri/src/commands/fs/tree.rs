@@ -28,7 +28,11 @@ pub fn read_directory(path: String, depth: Option<usize>) -> Result<FileNode, Ap
     build_tree(root, 0, max_depth)
 }
 
-pub fn build_tree(path: &Path, current_depth: usize, max_depth: usize) -> Result<FileNode, AppError> {
+pub fn build_tree(
+    path: &Path,
+    current_depth: usize,
+    max_depth: usize,
+) -> Result<FileNode, AppError> {
     let name = path
         .file_name()
         .map(|n| n.to_string_lossy().to_string())

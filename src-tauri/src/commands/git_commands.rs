@@ -110,11 +110,7 @@ pub fn git_status(cwd: String) -> Result<Vec<FileChange>, AppError> {
         }
 
         if st.is_wt_new() || st.is_wt_modified() || st.is_wt_deleted() || st.is_wt_renamed() {
-            let status = map_status_string(
-                st.is_wt_new(),
-                st.is_wt_deleted(),
-                st.is_wt_renamed(),
-            );
+            let status = map_status_string(st.is_wt_new(), st.is_wt_deleted(), st.is_wt_renamed());
             let (additions, deletions) = unstaged_stats.get(&path).copied().unwrap_or((0, 0));
             changes.push(FileChange {
                 path: path.clone(),

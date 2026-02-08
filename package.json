@@ -19,6 +19,9 @@
   "lint-staged": {
     "src/**/*.{ts,tsx,css}": [
       "biome check --write --no-errors-on-unmatched"
+    ],
+    "src-tauri/**/*.rs": [
+      "cargo fmt --manifest-path src-tauri/Cargo.toml --"
     ]
   },
   "dependencies": {

@@ -5,11 +5,7 @@ use std::io::{Read, Write};
 use tauri::{AppHandle, Emitter};
 use uuid::Uuid;
 
-fn run_pty_reader(
-    mut reader: Box<dyn Read + Send>,
-    handle: AppHandle,
-    session_id: String,
-) {
+fn run_pty_reader(mut reader: Box<dyn Read + Send>, handle: AppHandle, session_id: String) {
     let mut buf = [0u8; 16384];
     // Buffer for incomplete UTF-8 sequences at chunk boundaries
     let mut utf8_remainder: Vec<u8> = Vec::new();
@@ -47,9 +43,8 @@ fn run_pty_reader(
                         // Emit the valid portion
                         if valid_up_to > 0 {
                             // Safety: we know bytes up to valid_up_to are valid UTF-8
-                            let valid = unsafe {
-                                std::str::from_utf8_unchecked(&chunk[..valid_up_to])
-                            };
+                            let valid =
+                                unsafe { std::str::from_utf8_unchecked(&chunk[..valid_up_to]) };
                             let _ = handle.emit(&output_event, valid);
                         }
                         // Keep the incomplete tail for next read
