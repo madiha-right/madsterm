@@ -577,7 +577,14 @@ export const TerminalInstance: React.FC<TerminalInstanceProps> = ({
 
   // Update cursor style based on vim mode
   useEffect(() => {
-    if (!terminalRef.current || !vimMode) return;
+    if (!terminalRef.current) return;
+
+    if (!vimMode) {
+      terminalRef.current.options.cursorStyle = cursorStyle;
+      terminalRef.current.options.cursorBlink = cursorBlink;
+      return;
+    }
+
     if (vimState === "normal") {
       terminalRef.current.options.cursorStyle = "block";
       terminalRef.current.options.cursorBlink = false;

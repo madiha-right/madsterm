@@ -80,8 +80,7 @@ impl PtyManager {
                     Ok(0) => {
                         // Flush any remaining bytes as lossy before exit
                         if !utf8_remainder.is_empty() {
-                            let data =
-                                String::from_utf8_lossy(&utf8_remainder).to_string();
+                            let data = String::from_utf8_lossy(&utf8_remainder).to_string();
                             let _ = handle.emit(&output_event, &data);
                         }
                         let _ = handle.emit(&exit_event, ());
@@ -107,8 +106,9 @@ impl PtyManager {
                                 // Emit the valid portion
                                 if valid_up_to > 0 {
                                     // Safety: we know bytes up to valid_up_to are valid UTF-8
-                                    let valid =
-                                        unsafe { std::str::from_utf8_unchecked(&chunk[..valid_up_to]) };
+                                    let valid = unsafe {
+                                        std::str::from_utf8_unchecked(&chunk[..valid_up_to])
+                                    };
                                     let _ = handle.emit(&output_event, valid);
                                 }
                                 // Keep the incomplete tail for next read
@@ -116,8 +116,7 @@ impl PtyManager {
                                 if remainder.len() > 4 {
                                     // More than max UTF-8 sequence length — this isn't
                                     // just an incomplete sequence, emit lossy and clear
-                                    let data =
-                                        String::from_utf8_lossy(remainder).to_string();
+                                    let data = String::from_utf8_lossy(remainder).to_string();
                                     let _ = handle.emit(&output_event, &data);
                                     utf8_remainder.clear();
                                 } else {
