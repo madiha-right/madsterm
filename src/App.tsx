@@ -1,0 +1,131 @@
+import { useCallback, useEffect, useRef } from "react";
+import { PanelGroup, Panel, PanelResizeHandle } from "react-resizable-panels";
+import { TabBar } from "./components/layout/TabBar";
+import { StatusBar } from "./components/layout/StatusBar";
+import { FileExplorer } from "./components/explorer/FileExplorer";
+import { TerminalPanel } from "./components/terminal/TerminalPanel";
+import { DiffPanel } from "./components/diff/DiffPanel";
+import { usePanelStore } from "./stores/panelStore";
+import { useTabStore } from "./stores/tabStore";
+import { useThemeStore } from "./stores/themeStore";
+import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
+
+function generateId() {
+  return Math.random().toString(36).substring(2, 10);
+}
+
+export default function App() {
+  const { leftPanelVisible, rightPanelVisible } = usePanelStore();
+  const { tabs, activeTabId, addTab, removeTab } = useTabStore();
+  const theme = useThemeStore((s) => s.theme);
+
+  const handleNewTab = useCallback(() => {
+    const id = generateId();
+    addTab({
+      id,
+      title: "Terminal",
+      sessionId: "",
+      cwd: "",
+      isActive: true,
+    });
+  }, [addTab]);
+
+  const handleCloseTab = useCallback(() => {
+    if (activeTabId) {
+      removeTab(activeTabId);
+    }
+  }, [activeTabId, removeTab]);
+
+  // Create initial tab on mount
+  const initializedRef = useRef(false);
+  useEffect(() => {
+    if (tabs.length === 0 && !initializedRef.current) {
+      initializedRef.current = true;
+      handleNewTab();
+    }
+  }, []);
+
+  useKeyboardShortcuts(handleNewTab, handleCloseTab);
+
+  // Sync body background and CSS variables when theme changes
+  useEffect(() => {
+    document.body.style.backgroundColor = theme.bg;
+    document.documentElement.style.setProperty("--accent", theme.accent);
+    document.documentElement.style.setProperty("--accent-hover", theme.accentHover);
+    document.documentElement.style.setProperty("--accent-glow", `${theme.accent}33`);
+  }, [theme]);
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100vh",
+        width: "100vw",
+        overflow: "hidden",
+        backgroundColor: theme.bg,
+        color: theme.text,
+        fontFamily: "var(--font-ui)",
+        fontSize: 13,
+      }}
+    >
+      <TabBar onNewTab={handleNewTab} />
+
+      <div style={{ flex: 1, overflow: "hidden" }}>
+        <PanelGroup direction="horizontal">
+          {leftPanelVisible && (
+            <>
+              <Panel
+                id="file-explorer"
+                order={1}
+                defaultSize={20}
+                minSize={15}
+                maxSize={35}
+              >
+                <FileExplorer />
+              </Panel>
+              <PanelResizeHandle
+                style={{
+                  width: 2,
+                  background: theme.border,
+                  cursor: "col-resize",
+                  transition: "background 0.15s",
+                }}
+                className="resize-handle"
+              />
+            </>
+          )}
+
+          <Panel id="terminal" order={2} minSize={30}>
+            <TerminalPanel />
+          </Panel>
+
+          {rightPanelVisible && (
+            <>
+              <PanelResizeHandle
+                style={{
+                  width: 2,
+                  background: theme.border,
+                  cursor: "col-resize",
+                  transition: "background 0.15s",
+                }}
+                className="resize-handle"
+              />
+              <Panel
+                id="diff-panel"
+                order={3}
+                defaultSize={30}
+                minSize={20}
+                maxSize={50}
+              >
+                <DiffPanel />
+              </Panel>
+            </>
+          )}
+        </PanelGroup>
+      </div>
+
+      <StatusBar />
+    </div>
+  );
+}
