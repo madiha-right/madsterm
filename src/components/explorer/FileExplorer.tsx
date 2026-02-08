@@ -1,13 +1,13 @@
-import { useEffect, useRef, useCallback, useState } from "react";
 import { FolderTree, Search, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { getHomeDir, openFile, readDirectory } from "../../hooks/useFileExplorer";
 import { useFileExplorerStore } from "../../stores/fileExplorerStore";
 import { usePanelStore } from "../../stores/panelStore";
-import { readDirectory, getHomeDir, openFile } from "../../hooks/useFileExplorer";
 import { useTabStore } from "../../stores/tabStore";
 import { useThemeStore } from "../../stores/themeStore";
+import type { FileNode } from "../../types";
 import { FileTree } from "./FileTree";
 import { SearchResultsPanel } from "./SearchResultsPanel";
-import { FileNode } from "../../types";
 
 // Reusable toolbar icon button with tooltip that doesn't get clipped
 const ToolbarButton: React.FC<{
@@ -116,7 +116,7 @@ export const FileExplorer: React.FC = () => {
       setIsLoading(false);
     };
     init();
-  }, []);
+  }, [rootPath, setExpanded, setRootPath, setTree, tree]);
 
   // When switching to a tab that hasn't reported its CWD yet
   useEffect(() => {
@@ -135,7 +135,7 @@ export const FileExplorer: React.FC = () => {
       };
       reload();
     }
-  }, [activeTabId]);
+  }, [activeTabId, activeTab?.cwd, rootPath, setExpanded, setTree]);
 
   // Sync with active tab CWD
   useEffect(() => {
@@ -159,7 +159,7 @@ export const FileExplorer: React.FC = () => {
       setIsLoading(false);
     };
     load();
-  }, [activeTab?.cwd]);
+  }, [activeTab?.cwd, rootPath, setExpanded, setFocusedIndex, setRootPath, setTree]);
 
   // Refresh tree when refreshFlag changes
   useEffect(() => {
@@ -179,7 +179,7 @@ export const FileExplorer: React.FC = () => {
       setIsLoading(false);
     };
     load();
-  }, [refreshFlag]);
+  }, [refreshFlag, rootPath, setExpanded, setTree]);
 
   // Flatten the tree for keyboard navigation
   useEffect(() => {
@@ -340,7 +340,6 @@ export const FileExplorer: React.FC = () => {
       setFocusedIndex,
       setExpanded,
       setIsSearching,
-      setSearchQuery,
       setFocusedPanel,
     ],
   );

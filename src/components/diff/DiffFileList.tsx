@@ -1,8 +1,8 @@
-import { useRef, useEffect } from "react";
-import { FilePlus, FileEdit, FileX, FileSymlink } from "lucide-react";
-import { FileChange } from "../../types";
+import { FileEdit, FilePlus, FileSymlink, FileX } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { useThemeStore } from "../../stores/themeStore";
 import type { AppTheme } from "../../theme/themes";
+import type { FileChange } from "../../types";
 
 interface DiffFileListProps {
   changes: FileChange[];
@@ -31,7 +31,7 @@ function getFileName(path: string) {
 function getFileDir(path: string) {
   const parts = path.split("/");
   parts.pop();
-  return parts.length > 0 ? parts.join("/") + "/" : "";
+  return parts.length > 0 ? `${parts.join("/")}/` : "";
 }
 
 const DiffFileItem: React.FC<{

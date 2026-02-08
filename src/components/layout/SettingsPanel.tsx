@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { X, Check, Monitor } from "lucide-react";
+import { Check, Monitor, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useThemeStore } from "../../stores/themeStore";
 import { THEME_LIST, THEMES, type ThemeId } from "../../theme/themes";
 

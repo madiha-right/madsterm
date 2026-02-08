@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { FileChange, FileDiff } from "../types";
+import type { FileChange, FileDiff } from "../types";
 
 export async function fetchGitBranch(cwd: string): Promise<string> {
   return invoke<string>("git_branch", { cwd });

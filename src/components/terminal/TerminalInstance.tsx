@@ -1,23 +1,23 @@
-import { useEffect, useRef, useState, useCallback } from "react";
-import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { SearchAddon } from "@xterm/addon-search";
 import { Unicode11Addon } from "@xterm/addon-unicode11";
 import { WebglAddon } from "@xterm/addon-webgl";
-import {
-  createPtySession,
-  writePty,
-  resizePty,
-  closePty,
-  onPtyOutput,
-  onPtyExit,
-} from "../../hooks/usePty";
+import { Terminal } from "@xterm/xterm";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getHomeDir } from "../../hooks/useFileExplorer";
+import {
+  closePty,
+  createPtySession,
+  onPtyExit,
+  onPtyOutput,
+  resizePty,
+  writePty,
+} from "../../hooks/usePty";
+import { useNotificationStore } from "../../stores/notificationStore";
 import { usePanelStore } from "../../stores/panelStore";
 import { useSettingsStore } from "../../stores/settingsStore";
 import { useTabStore } from "../../stores/tabStore";
 import { useThemeStore } from "../../stores/themeStore";
-import { useNotificationStore } from "../../stores/notificationStore";
 import "@xterm/xterm/css/xterm.css";
 
 interface TerminalInstanceProps {
@@ -534,7 +534,22 @@ export const TerminalInstance: React.FC<TerminalInstanceProps> = ({
       fitAddonRef.current = null;
       searchAddonRef.current = null;
     };
-  }, []);
+  }, [
+    addNotification,
+    copyOnSelect,
+    cursorBlink,
+    cursorStyle,
+    cwd,
+    fontFamily,
+    fontSize,
+    onSearchAddonReady,
+    onTitleChange,
+    scrollbackLines,
+    tabId,
+    theme.xtermTheme,
+    updateTabCwd,
+    updateVimState,
+  ]);
 
   // Focus terminal when it becomes the active tab
   useEffect(() => {

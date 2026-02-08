@@ -1,17 +1,17 @@
 import { useCallback, useEffect, useRef } from "react";
-import { PanelGroup, Panel, PanelResizeHandle } from "react-resizable-panels";
-import { TabBar } from "./components/layout/TabBar";
-import { StatusBar } from "./components/layout/StatusBar";
-import { SettingsPanel } from "./components/layout/SettingsPanel";
-import { AboutDialog } from "./components/layout/AboutDialog";
-import { FileExplorer } from "./components/explorer/FileExplorer";
-import { TerminalPanel } from "./components/terminal/TerminalPanel";
+import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import { DiffPanel } from "./components/diff/DiffPanel";
+import { FileExplorer } from "./components/explorer/FileExplorer";
+import { AboutDialog } from "./components/layout/AboutDialog";
+import { SettingsPanel } from "./components/layout/SettingsPanel";
+import { StatusBar } from "./components/layout/StatusBar";
+import { TabBar } from "./components/layout/TabBar";
+import { TerminalPanel } from "./components/terminal/TerminalPanel";
+import { ToastContainer } from "./components/ui/Toast";
+import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { usePanelStore } from "./stores/panelStore";
 import { useTabStore } from "./stores/tabStore";
 import { useThemeStore } from "./stores/themeStore";
-import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
-import { ToastContainer } from "./components/ui/Toast";
 
 function generateId() {
   return Math.random().toString(36).substring(2, 10);
@@ -51,7 +51,7 @@ export default function App() {
       initializedRef.current = true;
       handleNewTab();
     }
-  }, []);
+  }, [handleNewTab, tabs.length]);
 
   useKeyboardShortcuts(handleNewTab, handleCloseTab, handleOpenSettings);
 

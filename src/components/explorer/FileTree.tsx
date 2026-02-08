@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { List, useListRef } from "react-window";
+import type { FileNode } from "../../types";
 import { FileTreeItem } from "./FileTreeItem";
-import { FileNode } from "../../types";
 
 interface FileTreeProps {
   items: { node: FileNode; depth: number }[];

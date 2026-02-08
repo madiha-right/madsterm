@@ -1,5 +1,5 @@
-import { X, AlertCircle, AlertTriangle, Info, CheckCircle } from "lucide-react";
-import { useNotificationStore, Notification } from "../../stores/notificationStore";
+import { AlertCircle, AlertTriangle, CheckCircle, Info, X } from "lucide-react";
+import { type Notification, useNotificationStore } from "../../stores/notificationStore";
 import { useThemeStore } from "../../stores/themeStore";
 
 const iconMap = {

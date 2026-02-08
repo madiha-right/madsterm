@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { FileDiff } from "../../types";
 import { useThemeStore } from "../../stores/themeStore";
+import type { FileDiff } from "../../types";
 
 interface DiffViewerProps {
   diff: FileDiff;

@@ -1,10 +1,10 @@
-import { useEffect, useRef, useCallback, useMemo } from "react";
-import { Search, ChevronRight, ChevronDown, FileText, CaseSensitive, Regex } from "lucide-react";
+import { CaseSensitive, ChevronDown, ChevronRight, FileText, Regex, Search } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
+import { openFile, searchInFiles } from "../../hooks/useFileExplorer";
 import { useFileExplorerStore } from "../../stores/fileExplorerStore";
 import { usePanelStore } from "../../stores/panelStore";
 import { useThemeStore } from "../../stores/themeStore";
-import { searchInFiles, openFile } from "../../hooks/useFileExplorer";
-import { FileSearchResult, SearchMatch } from "../../types";
+import type { FileSearchResult, SearchMatch } from "../../types";
 
 type FlatItem =
   | { type: "file"; file: FileSearchResult; fileIndex: number }
@@ -89,14 +89,14 @@ export const SearchResultsPanel: React.FC = () => {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [contentSearchQuery, performSearch]);
+  }, [contentSearchQuery, performSearch, setContentSearchResults]);
 
   // Re-search when toggles change (if there's a query)
   useEffect(() => {
     if (contentSearchQuery.trim()) {
       performSearch(contentSearchQuery);
     }
-  }, [caseSensitive, wholeWord, useRegex]);
+  }, [contentSearchQuery, performSearch]);
 
   // Build flat list for navigation
   const flatList = useMemo<FlatItem[]>(() => {
