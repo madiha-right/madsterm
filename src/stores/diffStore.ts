@@ -27,7 +27,15 @@ export const useDiffStore = create<DiffStore>((set) => ({
   focusedIndex: 0,
   isLoading: false,
 
-  setChanges: (changes) => set({ changes, expandedFiles: new Set(changes.map((c) => c.path)) }),
+  setChanges: (changes) =>
+    set((state) => {
+      const prev = new Set(state.changes.map((c) => c.path));
+      const expanded = new Set(state.expandedFiles);
+      for (const c of changes) {
+        if (!prev.has(c.path)) expanded.add(c.path);
+      }
+      return { changes, expandedFiles: expanded };
+    }),
 
   setSelectedFile: (path) => set({ selectedFilePath: path }),
 

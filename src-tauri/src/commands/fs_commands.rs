@@ -46,7 +46,15 @@ const BINARY_EXTENSIONS: &[&str] = &[
     "wasm", "ttf", "otf", "woff", "woff2", "eot", "class", "jar", "pyc", "pyo",
 ];
 
-const SKIP_DIRS: &[&str] = &[".git", "target", "node_modules", ".next", "dist", "build", "__pycache__"];
+const SKIP_DIRS: &[&str] = &[
+    ".git",
+    "target",
+    "node_modules",
+    ".next",
+    "dist",
+    "build",
+    "__pycache__",
+];
 
 fn build_search_pattern(
     query: &str,
