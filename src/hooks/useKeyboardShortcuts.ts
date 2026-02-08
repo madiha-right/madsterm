@@ -1,5 +1,6 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useEffect, useRef } from "react";
+import { useContentSearchStore } from "../stores/contentSearchStore";
 import { useFileExplorerStore } from "../stores/fileExplorerStore";
 import { usePanelStore } from "../stores/panelStore";
 import { useSettingsStore } from "../stores/settingsStore";
@@ -15,9 +16,9 @@ export function useKeyboardShortcuts(
   const { tabs, activeTabId, setActiveTab, reopenLastClosedTab, addTab } = useTabStore();
   const { increaseFontSize, decreaseFontSize, resetFontSize } = useSettingsStore();
   const setIsSearching = useFileExplorerStore((s) => s.setIsSearching);
-  const toggleCaseSensitive = useFileExplorerStore((s) => s.toggleCaseSensitive);
-  const toggleWholeWord = useFileExplorerStore((s) => s.toggleWholeWord);
-  const toggleUseRegex = useFileExplorerStore((s) => s.toggleUseRegex);
+  const toggleCaseSensitive = useContentSearchStore((s) => s.toggleCaseSensitive);
+  const toggleWholeWord = useContentSearchStore((s) => s.toggleWholeWord);
+  const toggleUseRegex = useContentSearchStore((s) => s.toggleUseRegex);
 
   // Use refs for frequently-changing values to avoid recreating the listener
   const tabsRef = useRef(tabs);

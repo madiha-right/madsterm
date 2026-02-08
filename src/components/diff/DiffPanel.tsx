@@ -1,35 +1,14 @@
-import {
-  ChevronDown,
-  ChevronRight,
-  Copy,
-  GitCompareArrows,
-  Inbox,
-  RefreshCw,
-  X,
-} from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { getHomeDir } from "../../hooks/useFileExplorer";
-import { fetchGitDiff, fetchGitStatus } from "../../hooks/useGitDiff";
+import { GitCompareArrows, Inbox, RefreshCw, X } from "lucide-react";
+import { useCallback, useEffect, useRef } from "react";
+import { useGitPolling } from "../../hooks/useGitPolling";
+import { useVimListNavigation } from "../../hooks/useVimListNavigation";
 import { useDiffStore } from "../../stores/diffStore";
 import { usePanelStore } from "../../stores/panelStore";
-import { useTabStore } from "../../stores/tabStore";
 import { useThemeStore } from "../../stores/themeStore";
-import type { FileChange } from "../../types";
-import { DiffViewer } from "./DiffViewer";
-
-function getFileName(path: string) {
-  return path.split("/").pop() || path;
-}
-
-function getFileDir(path: string) {
-  const parts = path.split("/");
-  parts.pop();
-  return parts.length > 0 ? `${parts.join("/")}/` : "";
-}
+import { DiffFileSection } from "./DiffFileSection";
 
 export const DiffPanel: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const gPressedRef = useRef(false);
   const theme = useThemeStore((s) => s.theme);
   const {
     changes,
@@ -37,181 +16,38 @@ export const DiffPanel: React.FC = () => {
     fileDiffs,
     focusedIndex,
     isLoading,
-    setChanges,
     toggleFileExpanded,
-    setFileDiff,
     setFocusedIndex,
-    setIsLoading,
   } = useDiffStore();
   const { focusedPanel, setFocusedPanel, toggleRightPanel } = usePanelStore();
-  const activeTab = useTabStore((s) => s.tabs.find((t) => t.id === s.activeTabId));
-  const [homeDir, setHomeDir] = useState<string | null>(null);
-  const isGitRepoRef = useRef(true);
-  const [branchName, setBranchName] = useState<string>("main");
+  const { branchName, handleToggleFile } = useGitPolling();
 
-  useEffect(() => {
-    getHomeDir()
-      .then(setHomeDir)
-      .catch(() => {});
-  }, []);
-
-  const getEffectiveCwd = useCallback(() => {
-    return activeTab?.cwd || homeDir || null;
-  }, [activeTab?.cwd, homeDir]);
-
-  const loadStatus = useCallback(async () => {
-    const cwd = getEffectiveCwd();
-    if (!cwd) {
-      setChanges([]);
-      return;
+  const onExpand = useCallback(() => {
+    const file = changes[focusedIndex];
+    if (file) {
+      handleToggleFile(file.path);
     }
-    setIsLoading(true);
-    try {
-      const IGNORED_FILES = ["package-lock.json", "yarn.lock", "pnpm-lock.yaml", "Cargo.lock"];
-      const result = (await fetchGitStatus(cwd)).filter(
-        (c) => !IGNORED_FILES.some((f) => c.path.endsWith(f)),
-      );
-      setChanges(result);
-      isGitRepoRef.current = true;
-      // Try to get branch name
-      try {
-        const { invoke } = await import("@tauri-apps/api/core");
-        const branch = await invoke<string>("git_branch", { cwd });
-        setBranchName(branch);
-      } catch {
-        // Branch name unavailable, keep default
-      }
-    } catch {
-      setChanges([]);
-      isGitRepoRef.current = false;
+  }, [changes, focusedIndex, handleToggleFile]);
+
+  const onCollapse = useCallback(() => {
+    const file = changes[focusedIndex];
+    if (file && expandedFiles.has(file.path)) {
+      toggleFileExpanded(file.path);
     }
-    setIsLoading(false);
-  }, [getEffectiveCwd, setChanges, setIsLoading]);
+  }, [changes, focusedIndex, expandedFiles, toggleFileExpanded]);
 
-  const loadFileDiff = useCallback(
-    async (filePath: string) => {
-      const cwd = getEffectiveCwd();
-      if (!cwd) return;
-      try {
-        const diffs = await fetchGitDiff(cwd, filePath);
-        if (diffs.length > 0) {
-          setFileDiff(filePath, diffs[0]);
-        }
-      } catch {
-        // Diff load failed, silently ignore
-      }
-    },
-    [getEffectiveCwd, setFileDiff],
-  );
+  const onEscape = useCallback(() => {
+    setFocusedPanel("terminal");
+  }, [setFocusedPanel]);
 
-  // Load on mount and poll every 5s
-  useEffect(() => {
-    loadStatus();
-    const interval = setInterval(loadStatus, 5000);
-    return () => clearInterval(interval);
-  }, [loadStatus]);
-
-  // Immediate refresh on tab switch
-  useEffect(() => {
-    loadStatus();
-  }, [loadStatus]);
-
-  // Load diff when a file is expanded — read from store directly to avoid stale closures
-  const handleToggleFile = useCallback(
-    (path: string) => {
-      const state = useDiffStore.getState();
-      const isExpanding = !state.expandedFiles.has(path);
-      toggleFileExpanded(path);
-      if (isExpanding && !state.fileDiffs.has(path)) {
-        loadFileDiff(path);
-      }
-    },
-    [toggleFileExpanded, loadFileDiff],
-  );
-
-  // Vim keybindings
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      // Ctrl+D / Ctrl+U — half-page jump
-      if (e.ctrlKey && (e.key === "d" || e.key === "u")) {
-        e.preventDefault();
-        const jump = 10;
-        if (e.key === "d") {
-          setFocusedIndex(Math.min(focusedIndex + jump, changes.length - 1));
-        } else {
-          setFocusedIndex(Math.max(focusedIndex - jump, 0));
-        }
-        return;
-      }
-
-      // g -> wait for next key
-      if (e.key === "g") {
-        if (gPressedRef.current) {
-          setFocusedIndex(0);
-          gPressedRef.current = false;
-          e.preventDefault();
-          return;
-        }
-        gPressedRef.current = true;
-        setTimeout(() => {
-          gPressedRef.current = false;
-        }, 500);
-        e.preventDefault();
-        return;
-      }
-      gPressedRef.current = false;
-
-      switch (e.key) {
-        case "j":
-        case "ArrowDown":
-          e.preventDefault();
-          setFocusedIndex(Math.min(focusedIndex + 1, changes.length - 1));
-          break;
-        case "k":
-        case "ArrowUp":
-          e.preventDefault();
-          setFocusedIndex(Math.max(focusedIndex - 1, 0));
-          break;
-        case " ":
-        case "Enter":
-        case "l":
-        case "ArrowRight": {
-          e.preventDefault();
-          const file = changes[focusedIndex];
-          if (file) {
-            handleToggleFile(file.path);
-          }
-          break;
-        }
-        case "h":
-        case "ArrowLeft": {
-          e.preventDefault();
-          const file = changes[focusedIndex];
-          if (file && expandedFiles.has(file.path)) {
-            toggleFileExpanded(file.path);
-          }
-          break;
-        }
-        case "G":
-          e.preventDefault();
-          setFocusedIndex(changes.length - 1);
-          break;
-        case "Escape":
-          e.preventDefault();
-          setFocusedPanel("terminal");
-          break;
-      }
-    },
-    [
-      focusedIndex,
-      changes,
-      expandedFiles,
-      setFocusedIndex,
-      handleToggleFile,
-      toggleFileExpanded,
-      setFocusedPanel,
-    ],
-  );
+  const { handleKeyDown } = useVimListNavigation({
+    items: changes,
+    focusedIndex,
+    setFocusedIndex,
+    onExpand,
+    onCollapse,
+    onEscape,
+  });
 
   useEffect(() => {
     if (focusedPanel === "diff" && containerRef.current) {
@@ -391,174 +227,6 @@ export const DiffPanel: React.FC = () => {
           to { transform: rotate(360deg); }
         }
       `}</style>
-    </div>
-  );
-};
-
-// Accordion file section
-const DiffFileSection: React.FC<{
-  change: FileChange;
-  index: number;
-  isFocused: boolean;
-  isExpanded: boolean;
-  diff: ReturnType<typeof useDiffStore.getState>["fileDiffs"] extends Map<string, infer V>
-    ? V | null
-    : never;
-  onToggle: () => void;
-  onFocus: () => void;
-}> = ({ change, isFocused, isExpanded, diff, onToggle, onFocus }) => {
-  const headerRef = useRef<HTMLDivElement>(null);
-  const theme = useThemeStore((s) => s.theme);
-  const [headerHovered, setHeaderHovered] = useState(false);
-  const [copyHovered, setCopyHovered] = useState(false);
-
-  useEffect(() => {
-    if (isFocused && headerRef.current) {
-      headerRef.current.scrollIntoView({ block: "nearest" });
-    }
-  }, [isFocused]);
-
-  return (
-    <div style={{ borderBottom: `1px solid ${theme.border}` }}>
-      {/* File header */}
-      <div
-        ref={headerRef}
-        onClick={() => {
-          onFocus();
-          onToggle();
-        }}
-        onMouseEnter={() => setHeaderHovered(true)}
-        onMouseLeave={() => setHeaderHovered(false)}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          padding: "6px 10px",
-          cursor: "pointer",
-          backgroundColor: isFocused
-            ? theme.explorerSelected
-            : headerHovered
-              ? theme.explorerHover
-              : "transparent",
-          borderLeft: isFocused ? `2px solid ${theme.accent}` : "2px solid transparent",
-          transition: "background-color 0.08s",
-        }}
-      >
-        {/* Expand/collapse chevron */}
-        {isExpanded ? (
-          <ChevronDown size={14} color={theme.textMuted} style={{ flexShrink: 0 }} />
-        ) : (
-          <ChevronRight size={14} color={theme.textMuted} style={{ flexShrink: 0 }} />
-        )}
-
-        {/* File path */}
-        <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 4 }}>
-          <span
-            style={{
-              fontSize: 12,
-              color: theme.text,
-              fontWeight: 500,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {getFileDir(change.path)}
-            <span style={{ color: theme.textBright, fontWeight: 600 }}>
-              {getFileName(change.path)}
-            </span>
-          </span>
-        </div>
-
-        {/* Copy path button */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            navigator.clipboard.writeText(change.path);
-          }}
-          onMouseEnter={() => setCopyHovered(true)}
-          onMouseLeave={() => setCopyHovered(false)}
-          title="Copy path"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: "transparent",
-            border: "none",
-            color: copyHovered ? theme.text : theme.textMuted,
-            cursor: "pointer",
-            padding: 2,
-            opacity: headerHovered || isFocused ? 1 : 0,
-            transition: "opacity 0.1s",
-          }}
-        >
-          <Copy size={12} />
-        </button>
-
-        {/* Stats badge */}
-        {(change.additions > 0 || change.deletions > 0) && (
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 3,
-              padding: "1px 6px",
-              backgroundColor: theme.bgActive,
-              fontSize: 10,
-              fontWeight: 600,
-              flexShrink: 0,
-            }}
-          >
-            {change.additions > 0 && (
-              <span style={{ color: theme.diffAddedText }}>+{change.additions}</span>
-            )}
-            {change.additions > 0 && change.deletions > 0 && (
-              <span style={{ color: theme.textMuted }}>&middot;</span>
-            )}
-            {change.deletions > 0 && (
-              <span style={{ color: theme.diffRemovedText }}>-{change.deletions}</span>
-            )}
-          </span>
-        )}
-
-        {/* Staged badge */}
-        {change.is_staged && (
-          <span
-            style={{
-              fontSize: 9,
-              color: theme.accent,
-              backgroundColor: theme.bgActive,
-              padding: "1px 5px",
-              fontWeight: 600,
-              letterSpacing: "0.3px",
-              textTransform: "uppercase",
-              flexShrink: 0,
-            }}
-          >
-            staged
-          </span>
-        )}
-      </div>
-
-      {/* Inline diff viewer */}
-      {isExpanded && (
-        <div>
-          {diff ? (
-            <DiffViewer diff={diff} />
-          ) : (
-            <div
-              style={{
-                padding: "12px",
-                color: theme.textMuted,
-                fontSize: 11,
-                textAlign: "center",
-              }}
-            >
-              Loading diff...
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 };

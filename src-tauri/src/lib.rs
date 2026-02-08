@@ -1,5 +1,8 @@
 mod commands;
+pub mod error;
 mod pty_manager;
+
+pub use error::AppError;
 
 use parking_lot::Mutex;
 use std::sync::Arc;
@@ -20,12 +23,12 @@ pub fn run() {
             commands::git_commands::git_branch,
             commands::git_commands::git_status,
             commands::git_commands::git_diff,
-            commands::fs_commands::read_directory,
-            commands::fs_commands::open_file,
-            commands::fs_commands::get_cwd,
-            commands::fs_commands::get_home_dir,
-            commands::fs_commands::get_shell_name,
-            commands::fs_commands::search_in_files,
+            commands::fs::read_directory,
+            commands::fs::open_file,
+            commands::fs::get_cwd,
+            commands::fs::get_home_dir,
+            commands::fs::get_shell_name,
+            commands::fs::search_in_files,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

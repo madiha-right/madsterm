@@ -1,3 +1,3 @@
-pub mod fs_commands;
+pub mod fs;
 pub mod git_commands;
 pub mod pty_commands;
