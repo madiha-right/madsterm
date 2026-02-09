@@ -5,7 +5,7 @@ vi.mock("../../../commands/pty", () => ({
 }));
 
 import { writePty } from "../../../commands/pty";
-import { handleVimNormalMode } from "../vimMode";
+import { handleVimNormalMode, type VimMode } from "../vimMode";
 
 const mockWritePty = vi.mocked(writePty);
 
@@ -37,12 +37,12 @@ function makeKeyEvent(overrides: Partial<KeyboardEvent> = {}): KeyboardEvent {
 describe("handleVimNormalMode", () => {
   let terminal: ReturnType<typeof createMockTerminal>;
   let gPressedRef: { current: boolean };
-  let updateVimState: ReturnType<typeof vi.fn>;
+  let updateVimState: (mode: VimMode) => void;
 
   beforeEach(() => {
     terminal = createMockTerminal();
     gPressedRef = { current: false };
-    updateVimState = vi.fn();
+    updateVimState = vi.fn() as unknown as (mode: VimMode) => void;
     mockWritePty.mockClear();
   });
 

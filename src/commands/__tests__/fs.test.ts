@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { mockInvoke } from "../../test/setup";
 import { getCwd, getHomeDir, getShellName, openFile, readDirectory, searchInFiles } from "../fs";
 

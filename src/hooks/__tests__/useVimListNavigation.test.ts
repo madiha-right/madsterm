@@ -20,14 +20,14 @@ function makeKeyEvent(
 
 describe("useVimListNavigation", () => {
   const items = { length: 20 };
-  let onExpand: ReturnType<typeof vi.fn>;
-  let onCollapse: ReturnType<typeof vi.fn>;
-  let onEscape: ReturnType<typeof vi.fn>;
+  let onExpand: () => void;
+  let onCollapse: () => void;
+  let onEscape: () => void;
 
   beforeEach(() => {
-    onExpand = vi.fn();
-    onCollapse = vi.fn();
-    onEscape = vi.fn();
+    onExpand = vi.fn() as unknown as () => void;
+    onCollapse = vi.fn() as unknown as () => void;
+    onEscape = vi.fn() as unknown as () => void;
   });
 
   function setupHook(initialIndex = 0) {
