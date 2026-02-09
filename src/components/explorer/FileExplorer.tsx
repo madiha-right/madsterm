@@ -76,6 +76,13 @@ export const FileExplorer: React.FC = () => {
     }
   }, [focusedPanel]);
 
+  // Re-focus container when leaving search mode so vim navigation works
+  useEffect(() => {
+    if (!isSearching && focusedPanel === "explorer" && containerRef.current) {
+      containerRef.current.focus();
+    }
+  }, [isSearching, focusedPanel]);
+
   return (
     <div
       ref={containerRef}
@@ -107,7 +114,7 @@ export const FileExplorer: React.FC = () => {
       >
         <ToolbarButton
           icon={<FolderTree size={14} />}
-          tooltip={"\u2318\u21E7E"}
+          tooltip={"Explorer  \u2318\u21E7E"}
           isActive={!isSearching}
           onClick={(e) => {
             e.stopPropagation();
@@ -120,7 +127,7 @@ export const FileExplorer: React.FC = () => {
         />
         <ToolbarButton
           icon={<Search size={14} />}
-          tooltip={"\u2318\u21E7F"}
+          tooltip={"Global Search  \u2318\u21E7F"}
           isActive={isSearching}
           onClick={(e) => {
             e.stopPropagation();
@@ -130,7 +137,7 @@ export const FileExplorer: React.FC = () => {
         <div style={{ flex: 1 }} />
         <ToolbarButton
           icon={<X size={14} />}
-          tooltip={"\u2318\u21E7E"}
+          tooltip={"Close  \u2318\u21E7E"}
           onClick={(e) => {
             e.stopPropagation();
             toggleLeftPanel();

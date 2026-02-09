@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useThemeStore } from "../../stores/themeStore";
 
 interface AboutDialogProps {
@@ -69,19 +70,24 @@ export const AboutDialog: React.FC<AboutDialogProps> = ({ open, onClose }) => {
     { key: `${mod},`, label: "Settings" },
   ];
 
-  return (
+  return createPortal(
     <div
       style={{
         position: "fixed",
         inset: 0,
-        zIndex: 9999,
+        zIndex: 10001,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: "rgba(0, 0, 0, 0.7)",
+        // @ts-expect-error — WebKit vendor prefix to opt out of native drag region
+        WebkitAppRegion: "no-drag",
       }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
+      }}
+      onMouseDown={(e) => {
+        e.stopPropagation();
       }}
     >
       <div
@@ -274,6 +280,7 @@ export const AboutDialog: React.FC<AboutDialogProps> = ({ open, onClose }) => {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };

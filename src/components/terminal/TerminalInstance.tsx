@@ -56,6 +56,7 @@ export const TerminalInstance: React.FC<TerminalInstanceProps> = ({
     setVimState(mode);
   }, []);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Terminal creation is a one-time mount effect. Reactive changes (fontSize, fontFamily, theme, cursor) are handled by dedicated useEffect hooks below.
   useEffect(() => {
     if (!containerRef.current || mountedRef.current) return;
     mountedRef.current = true;
@@ -181,41 +182,27 @@ export const TerminalInstance: React.FC<TerminalInstanceProps> = ({
       fitAddonRef.current = null;
       searchAddonRef.current = null;
     };
-  }, [
-    addNotification,
-    copyOnSelect,
-    cursorBlink,
-    cursorStyle,
-    cwd,
-    fontFamily,
-    fontSize,
-    onSearchAddonReady,
-    onTitleChange,
-    scrollbackLines,
-    tabId,
-    theme.xtermTheme,
-    updateTabCwd,
-    updateVimState,
-  ]);
+  }, []);
 
   // Focus terminal when it becomes the active tab
+  const modalOpen = usePanelStore((s) => s.settingsOpen || s.aboutOpen);
   useEffect(() => {
-    if (isActive && terminalRef.current) {
+    if (isActive && !modalOpen && terminalRef.current) {
       terminalRef.current.focus();
       fitAddonRef.current?.fit();
     }
-  }, [isActive]);
+  }, [isActive, modalOpen]);
 
   // Focus terminal when panel focus returns to terminal
   const focusedPanel = usePanelStore((s) => s.focusedPanel);
   useEffect(() => {
-    if (isActive && focusedPanel === "terminal" && terminalRef.current) {
+    if (isActive && !modalOpen && focusedPanel === "terminal" && terminalRef.current) {
       // Small delay to let panel transitions complete
       requestAnimationFrame(() => {
         terminalRef.current?.focus();
       });
     }
-  }, [focusedPanel, isActive]);
+  }, [focusedPanel, isActive, modalOpen]);
 
   // React to font size changes
   useEffect(() => {
