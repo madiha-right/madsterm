@@ -68,23 +68,28 @@ export function useDirectoryLoader() {
     if (!activeTab?.cwd) return;
     const cwd = activeTab.cwd;
     if (cwd === rootPath) return;
-    setTree(null);
     setIsLoading(true);
     setLoadError(null);
+    let stale = false;
     const load = async () => {
       try {
         const result = await readDirectory(cwd, 2);
+        if (stale) return;
         setRootPath(cwd);
         setTree(result);
         setExpanded(result.path, true);
         setFocusedIndex(0);
       } catch (e: any) {
+        if (stale) return;
         const msg = typeof e === "string" ? e : e?.message || JSON.stringify(e);
         console.error("Failed to load directory:", msg);
       }
-      setIsLoading(false);
+      if (!stale) setIsLoading(false);
     };
     load();
+    return () => {
+      stale = true;
+    };
   }, [activeTab?.cwd, rootPath, setExpanded, setFocusedIndex, setRootPath, setTree]);
 
   // Refresh tree when refreshFlag changes

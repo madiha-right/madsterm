@@ -1,5 +1,6 @@
 import { Plus, X } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
+import { usePanelStore } from "../../stores/panelStore";
 import { useTabStore } from "../../stores/tabStore";
 import { useThemeStore } from "../../stores/themeStore";
 
@@ -88,6 +89,7 @@ const Separator = () => {
 export const TabBar: React.FC<TabBarProps> = ({ onNewTab }) => {
   const { tabs, activeTabId, setActiveTab, removeTab, moveTab } = useTabStore();
   const theme = useThemeStore((s) => s.theme);
+  const modalOpen = usePanelStore((s) => s.settingsOpen || s.aboutOpen);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
@@ -134,7 +136,7 @@ export const TabBar: React.FC<TabBarProps> = ({ onNewTab }) => {
 
   return (
     <div
-      data-tauri-drag-region
+      {...(!modalOpen ? { "data-tauri-drag-region": true } : {})}
       role="tablist"
       aria-label="Terminal tabs"
       style={{

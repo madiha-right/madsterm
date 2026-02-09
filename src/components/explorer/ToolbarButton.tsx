@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { useThemeStore } from "../../stores/themeStore";
 
 export const ToolbarButton: React.FC<{
@@ -10,11 +10,15 @@ export const ToolbarButton: React.FC<{
   const theme = useThemeStore((s) => s.theme);
   const [hovered, setHovered] = useState(false);
   const btnRef = useRef<HTMLDivElement>(null);
-  const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties>({});
+  const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties | null>(null);
 
-  // Position tooltip so it never gets clipped by the window
-  useEffect(() => {
-    if (!hovered || !btnRef.current) return;
+  // Position tooltip so it never gets clipped by the window.
+  // useLayoutEffect runs before paint, preventing the flash at wrong position.
+  useLayoutEffect(() => {
+    if (!hovered || !btnRef.current) {
+      setTooltipStyle(null);
+      return;
+    }
     const rect = btnRef.current.getBoundingClientRect();
     const tipWidth = tooltip.length * 7 + 16; // rough estimate
     const style: React.CSSProperties = {
@@ -57,7 +61,7 @@ export const ToolbarButton: React.FC<{
       >
         {icon}
       </button>
-      {hovered && <div style={tooltipStyle}>{tooltip}</div>}
+      {hovered && tooltipStyle && <div style={tooltipStyle}>{tooltip}</div>}
     </div>
   );
 };

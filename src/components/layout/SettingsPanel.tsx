@@ -1,5 +1,6 @@
 import { Check, Monitor, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useThemeStore } from "../../stores/themeStore";
 import { THEME_LIST, THEMES, type ThemeId } from "../../theme/themes";
 
@@ -13,16 +14,25 @@ const ThemeCard: React.FC<{
   name: string;
   previewColors?: [string, string, string, string, string];
   isActive: boolean;
+  isFocused: boolean;
   onSelect: () => void;
-}> = ({ themeId, name, isActive, onSelect }) => {
+  onMouseEnterCard: () => void;
+}> = ({ themeId, name, isActive, isFocused, onSelect, onMouseEnterCard }) => {
   const currentTheme = useThemeStore((s) => s.theme);
   const preview = THEMES[themeId];
   const [hovered, setHovered] = useState(false);
 
   return (
     <button
-      onClick={onSelect}
-      onMouseEnter={() => setHovered(true)}
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onSelect();
+      }}
+      onMouseEnter={() => {
+        setHovered(true);
+        onMouseEnterCard();
+      }}
       onMouseLeave={() => setHovered(false)}
       style={{
         position: "relative",
@@ -30,12 +40,14 @@ const ThemeCard: React.FC<{
         padding: 0,
         border: isActive
           ? `1px solid ${currentTheme.textBright}`
-          : `1px solid ${hovered ? currentTheme.border : "transparent"}`,
+          : `1px solid ${isFocused || hovered ? currentTheme.border : "transparent"}`,
         background: "transparent",
         cursor: "pointer",
         borderRadius: 0,
         overflow: "hidden",
         transition: "border-color 0.15s ease",
+        outline: isFocused ? `1px solid ${currentTheme.accent}` : "none",
+        outlineOffset: 1,
       }}
     >
       {/* Mini terminal preview */}
@@ -59,9 +71,30 @@ const ThemeCard: React.FC<{
             borderBottom: `1px solid ${preview.border}`,
           }}
         >
-          <div style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "#ff5f56" }} />
-          <div style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "#ffbd2e" }} />
-          <div style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "#27c93f" }} />
+          <div
+            style={{
+              width: 6,
+              height: 6,
+              borderRadius: "50%",
+              backgroundColor: "#ff5f56",
+            }}
+          />
+          <div
+            style={{
+              width: 6,
+              height: 6,
+              borderRadius: "50%",
+              backgroundColor: "#ffbd2e",
+            }}
+          />
+          <div
+            style={{
+              width: 6,
+              height: 6,
+              borderRadius: "50%",
+              backgroundColor: "#27c93f",
+            }}
+          />
           <span
             style={{
               fontSize: 8,
@@ -75,7 +108,13 @@ const ThemeCard: React.FC<{
         </div>
 
         {/* Fake terminal lines */}
-        <div style={{ fontSize: 9, fontFamily: "var(--font-mono)", lineHeight: 1.6 }}>
+        <div
+          style={{
+            fontSize: 9,
+            fontFamily: "var(--font-mono)",
+            lineHeight: 1.6,
+          }}
+        >
           <div>
             <span style={{ color: preview.xtermTheme.green }}>$</span>
             <span style={{ color: preview.text }}> ls -la</span>
@@ -120,8 +159,110 @@ const ThemeCard: React.FC<{
 
 export const SettingsPanel: React.FC<SettingsPanelProps> = ({ open, onClose }) => {
   const { themeId, theme, setTheme } = useThemeStore();
+  const [focusedIndex, setFocusedIndex] = useState(-1);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const cardRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const gPressedRef = useRef(false);
+  const cols = 3;
 
-  // Close on Escape
+  // Reset focused index when opening
+  useEffect(() => {
+    if (open) {
+      const activeIdx = THEME_LIST.findIndex((t) => t.id === themeId);
+      setFocusedIndex(activeIdx >= 0 ? activeIdx : 0);
+    }
+  }, [open, themeId]);
+
+  // Focus the content area when opening
+  useEffect(() => {
+    if (open) {
+      requestAnimationFrame(() => {
+        contentRef.current?.focus();
+      });
+    }
+  }, [open]);
+
+  // Scroll focused card into view
+  useEffect(() => {
+    if (open && focusedIndex >= 0) {
+      cardRefs.current[focusedIndex]?.scrollIntoView({ block: "nearest" });
+    }
+  }, [open, focusedIndex]);
+
+  const handleGridKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      // gg — jump to first
+      if (e.key === "g") {
+        if (gPressedRef.current) {
+          setFocusedIndex(0);
+          gPressedRef.current = false;
+          e.preventDefault();
+          return;
+        }
+        gPressedRef.current = true;
+        setTimeout(() => {
+          gPressedRef.current = false;
+        }, 500);
+        e.preventDefault();
+        return;
+      }
+      gPressedRef.current = false;
+
+      // Ctrl+D / Ctrl+U — half-page jump
+      if (e.ctrlKey && (e.key === "d" || e.key === "u")) {
+        e.preventDefault();
+        const jump = cols * 3;
+        if (e.key === "d") {
+          setFocusedIndex((i) => Math.min(i + jump, THEME_LIST.length - 1));
+        } else {
+          setFocusedIndex((i) => Math.max(i - jump, 0));
+        }
+        return;
+      }
+
+      switch (e.key) {
+        case "j":
+        case "ArrowDown":
+          e.preventDefault();
+          setFocusedIndex((i) => Math.min(i + cols, THEME_LIST.length - 1));
+          break;
+        case "k":
+        case "ArrowUp":
+          e.preventDefault();
+          setFocusedIndex((i) => Math.max(i - cols, 0));
+          break;
+        case "h":
+        case "ArrowLeft":
+          e.preventDefault();
+          setFocusedIndex((i) => (i % cols > 0 ? i - 1 : i));
+          break;
+        case "l":
+        case "ArrowRight":
+          e.preventDefault();
+          setFocusedIndex((i) => (i % cols < cols - 1 && i < THEME_LIST.length - 1 ? i + 1 : i));
+          break;
+        case "G":
+          e.preventDefault();
+          setFocusedIndex(THEME_LIST.length - 1);
+          break;
+        case "Enter":
+        case " ":
+          e.preventDefault();
+          if (focusedIndex >= 0 && focusedIndex < THEME_LIST.length) {
+            setTheme(THEME_LIST[focusedIndex].id);
+          }
+          break;
+        case "Escape":
+          e.preventDefault();
+          e.stopPropagation();
+          onClose();
+          break;
+      }
+    },
+    [focusedIndex, setTheme, onClose, cols],
+  );
+
+  // Close on Escape (capture phase fallback)
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => {
@@ -137,19 +278,25 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ open, onClose }) =
 
   if (!open) return null;
 
-  return (
+  return createPortal(
     <div
       style={{
         position: "fixed",
         inset: 0,
-        zIndex: 9999,
+        zIndex: 10001,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: "rgba(0, 0, 0, 0.7)",
+        // @ts-expect-error — WebKit vendor prefix to opt out of native drag region
+        WebkitAppRegion: "no-drag",
       }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
+      }}
+      onMouseDown={(e) => {
+        // Prevent native Tauri drag-region detection from intercepting
+        e.stopPropagation();
       }}
     >
       <div
@@ -213,7 +360,18 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ open, onClose }) =
         </div>
 
         {/* Content */}
-        <div style={{ flex: 1, overflow: "auto", padding: "24px" }}>
+        <div
+          ref={contentRef}
+          tabIndex={0}
+          onKeyDown={handleGridKeyDown}
+          style={{
+            flex: 1,
+            minHeight: 0,
+            overflow: "auto",
+            padding: "24px",
+            outline: "none",
+          }}
+        >
           {/* Theme section */}
           <div>
             <div
@@ -237,15 +395,23 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ open, onClose }) =
                 gap: 12,
               }}
             >
-              {THEME_LIST.map((t) => (
-                <ThemeCard
+              {THEME_LIST.map((t, index) => (
+                <div
                   key={t.id}
-                  themeId={t.id}
-                  name={t.name}
-                  previewColors={t.previewColors}
-                  isActive={t.id === themeId}
-                  onSelect={() => setTheme(t.id)}
-                />
+                  ref={(el) => {
+                    cardRefs.current[index] = el as HTMLButtonElement | null;
+                  }}
+                >
+                  <ThemeCard
+                    themeId={t.id}
+                    name={t.name}
+                    previewColors={t.previewColors}
+                    isActive={t.id === themeId}
+                    isFocused={index === focusedIndex}
+                    onSelect={() => setTheme(t.id)}
+                    onMouseEnterCard={() => setFocusedIndex(index)}
+                  />
+                </div>
               ))}
             </div>
           </div>
@@ -315,6 +481,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ open, onClose }) =
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };

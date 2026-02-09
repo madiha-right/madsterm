@@ -79,7 +79,14 @@ export default function App() {
     >
       <TabBar onNewTab={handleNewTab} />
 
-      <div style={{ flex: 1, overflow: "hidden" }}>
+      <div
+        style={{
+          flex: 1,
+          overflow: "hidden",
+          visibility: settingsOpen || aboutOpen ? "hidden" : "visible",
+          pointerEvents: settingsOpen || aboutOpen ? "none" : "auto",
+        }}
+      >
         <PanelGroup direction="horizontal">
           {leftPanelVisible && (
             <>

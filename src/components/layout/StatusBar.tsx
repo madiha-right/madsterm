@@ -1,10 +1,86 @@
 import { FolderOpen, GitBranch, GitCompareArrows, Info, Settings, Terminal } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { getCwd, getShellName } from "../../commands/fs";
 import { fetchGitBranch } from "../../commands/git";
 import { usePanelStore } from "../../stores/panelStore";
 import { useThemeStore } from "../../stores/themeStore";
 import { ThemePicker } from "./ThemePicker";
+
+const StatusBarButton: React.FC<{
+  onClick: () => void;
+  ariaLabel: string;
+  ariaPressed?: boolean;
+  isActive: boolean;
+  tooltipText: string;
+  children: React.ReactNode;
+}> = ({ onClick, ariaLabel, ariaPressed, isActive, tooltipText, children }) => {
+  const theme = useThemeStore((s) => s.theme);
+  const [hovered, setHovered] = useState(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties | null>(null);
+
+  useLayoutEffect(() => {
+    if (!hovered || !btnRef.current) {
+      setTooltipStyle(null);
+      return;
+    }
+    const rect = btnRef.current.getBoundingClientRect();
+    const tipWidth = tooltipText.length * 7 + 16;
+    let left = rect.left + rect.width / 2 - tipWidth / 2;
+    if (left < 4) left = 4;
+    if (left + tipWidth > window.innerWidth - 4) left = window.innerWidth - 4 - tipWidth;
+    setTooltipStyle({
+      position: "fixed",
+      bottom: window.innerHeight - rect.top + 6,
+      left,
+      zIndex: 9999,
+      padding: "4px 8px",
+      backgroundColor: theme.bgPanel,
+      border: `1px solid ${theme.border}`,
+      color: theme.text,
+      fontSize: 11,
+      whiteSpace: "nowrap",
+      pointerEvents: "none",
+    });
+  }, [hovered, theme, tooltipText]);
+
+  return (
+    <div style={{ position: "relative" }}>
+      <button
+        ref={btnRef}
+        onClick={onClick}
+        aria-label={ariaLabel}
+        aria-pressed={ariaPressed}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "transparent",
+          border: "none",
+          color: isActive ? theme.accent : theme.statusBarText,
+          cursor: "pointer",
+          padding: "2px 6px",
+          borderRadius: 0,
+          fontSize: 10,
+          fontFamily: "var(--font-ui)",
+          height: 20,
+          width: 24,
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = theme.bgHover;
+          setHovered(true);
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = "transparent";
+          setHovered(false);
+        }}
+      >
+        {children}
+      </button>
+      {hovered && tooltipStyle && <div style={tooltipStyle}>{tooltipText}</div>}
+    </div>
+  );
+};
 
 export const StatusBar: React.FC = () => {
   const {
@@ -40,22 +116,6 @@ export const StatusBar: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const buttonStyle = (active: boolean): React.CSSProperties => ({
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "transparent",
-    border: "none",
-    color: active ? theme.accent : theme.statusBarText,
-    cursor: "pointer",
-    padding: "2px 6px",
-    borderRadius: 0,
-    fontSize: 10,
-    fontFamily: "var(--font-ui)",
-    height: 20,
-    width: 24,
-  });
-
   const infoItemStyle: React.CSSProperties = {
     display: "flex",
     alignItems: "center",
@@ -89,37 +149,25 @@ export const StatusBar: React.FC = () => {
     >
       {/* Left side - panel toggles */}
       <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
-        <button
+        <StatusBarButton
           onClick={toggleLeftPanel}
-          title="Toggle Explorer (Cmd+B)"
-          aria-label="Toggle file explorer"
-          aria-pressed={leftPanelVisible}
-          style={buttonStyle(leftPanelVisible)}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = theme.bgHover;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = "transparent";
-          }}
+          ariaLabel="Toggle file explorer"
+          ariaPressed={leftPanelVisible}
+          isActive={leftPanelVisible}
+          tooltipText={"Explorer  \u2318B"}
         >
           <FolderOpen size={13} />
-        </button>
+        </StatusBarButton>
 
-        <button
+        <StatusBarButton
           onClick={toggleRightPanel}
-          title="Toggle Changes (Cmd+Shift+=)"
-          aria-label="Toggle changes panel"
-          aria-pressed={rightPanelVisible}
-          style={buttonStyle(rightPanelVisible)}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = theme.bgHover;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = "transparent";
-          }}
+          ariaLabel="Toggle changes panel"
+          ariaPressed={rightPanelVisible}
+          isActive={rightPanelVisible}
+          tooltipText={"Changes  \u2318\u21E7="}
         >
           <GitCompareArrows size={13} />
-        </button>
+        </StatusBarButton>
 
         {/* Separator */}
         <div
@@ -143,35 +191,23 @@ export const StatusBar: React.FC = () => {
           }}
         />
 
-        <button
+        <StatusBarButton
           onClick={() => setSettingsOpen(true)}
-          title="Settings (Cmd+,)"
-          aria-label="Open settings"
-          style={buttonStyle(false)}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = theme.bgHover;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = "transparent";
-          }}
+          ariaLabel="Open settings"
+          isActive={false}
+          tooltipText={"Settings  \u2318,"}
         >
           <Settings size={13} />
-        </button>
+        </StatusBarButton>
 
-        <button
+        <StatusBarButton
           onClick={() => setAboutOpen(true)}
-          title="About Madsterm"
-          aria-label="About Madsterm"
-          style={buttonStyle(false)}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = theme.bgHover;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = "transparent";
-          }}
+          ariaLabel="About Madsterm"
+          isActive={false}
+          tooltipText={"About"}
         >
           <Info size={13} />
-        </button>
+        </StatusBarButton>
       </div>
 
       {/* Right side - shell, git branch, encoding */}
