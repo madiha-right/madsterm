@@ -30,6 +30,9 @@
       "style": {
         "useConst": "error"
       },
+      "security": {
+        "noDangerouslySetInnerHtml": "warn"
+      },
       "suspicious": {
         "noVar": "error",
         "noExplicitAny": "warn",

@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useThemeStore } from "../../stores/themeStore";
 import type { FileDiff } from "../../types";
+import { buildColorMap, detectLanguage, highlightLine } from "./highlightCode";
 
 interface DiffViewerProps {
   diff: FileDiff;
@@ -9,6 +10,9 @@ interface DiffViewerProps {
 export const DiffViewer: React.FC<DiffViewerProps> = ({ diff }) => {
   const [hoveredLine, setHoveredLine] = useState<string | null>(null);
   const theme = useThemeStore((s) => s.theme);
+
+  const language = useMemo(() => detectLanguage(diff.path), [diff.path]);
+  const colorMap = useMemo(() => buildColorMap(theme.xtermTheme), [theme]);
 
   if (diff.is_binary) {
     return <div style={{ padding: 12, color: theme.textMuted, fontSize: 12 }}>Binary file</div>;
@@ -52,11 +56,9 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({ diff }) => {
                 : isHovered
                   ? "rgba(255,255,255,0.02)"
                   : "transparent";
-            const textColor = isAdd
-              ? theme.diffAddedText
-              : isDel
-                ? theme.diffRemovedText
-                : theme.text;
+
+            const content = line.content.replace(/\n$/, "");
+            const highlighted = language ? highlightLine(content, language, colorMap) : null;
 
             return (
               <div
@@ -77,7 +79,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({ diff }) => {
                     minWidth: 45,
                     textAlign: "right",
                     padding: "0 8px 0 4px",
-                    color: isHovered ? theme.textMuted : theme.textMuted,
+                    color: theme.textMuted,
                     fontSize: 11,
                     userSelect: "none",
                     opacity: isHovered ? 0.8 : 0.5,
@@ -95,7 +97,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({ diff }) => {
                     minWidth: 45,
                     textAlign: "right",
                     padding: "0 8px 0 4px",
-                    color: isHovered ? theme.textMuted : theme.textMuted,
+                    color: theme.textMuted,
                     fontSize: 11,
                     userSelect: "none",
                     opacity: isHovered ? 0.8 : 0.5,
@@ -126,17 +128,34 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({ diff }) => {
                 </span>
 
                 {/* Content */}
-                <span
-                  style={{
-                    flex: 1,
-                    color: textColor,
-                    whiteSpace: "pre",
-                    overflow: "hidden",
-                    paddingRight: 12,
-                  }}
-                >
-                  {line.content.replace(/\n$/, "")}
-                </span>
+                {highlighted ? (
+                  <span
+                    style={{
+                      flex: 1,
+                      color: theme.text,
+                      whiteSpace: "pre",
+                      overflow: "hidden",
+                      paddingRight: 12,
+                    }}
+                    dangerouslySetInnerHTML={{ __html: highlighted }}
+                  />
+                ) : (
+                  <span
+                    style={{
+                      flex: 1,
+                      color: isAdd
+                        ? theme.diffAddedText
+                        : isDel
+                          ? theme.diffRemovedText
+                          : theme.text,
+                      whiteSpace: "pre",
+                      overflow: "hidden",
+                      paddingRight: 12,
+                    }}
+                  >
+                    {content}
+                  </span>
+                )}
               </div>
             );
           })}
