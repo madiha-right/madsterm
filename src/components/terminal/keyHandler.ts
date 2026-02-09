@@ -33,6 +33,9 @@ export function isAppShortcut(e: KeyboardEvent): boolean {
   )
     return true;
 
+  // Cmd+Ctrl+F (fullscreen toggle, macOS only)
+  if (isMac && e.ctrlKey && e.metaKey && key === "f") return true;
+
   // Alt+Cmd+C/W/R (search toggles)
   if (e.altKey && !e.shiftKey && ["c", "w", "r"].includes(key)) return true;
 

@@ -23,32 +23,6 @@ export function useGitPolling() {
     return activeTab?.cwd || homeDir || null;
   }, [activeTab?.cwd, homeDir]);
 
-  const loadStatus = useCallback(async () => {
-    const cwd = getEffectiveCwd();
-    if (!cwd) {
-      setChanges([]);
-      return;
-    }
-    setIsLoading(true);
-    try {
-      const result = (await fetchGitStatus(cwd)).filter(
-        (c) => !IGNORED_FILES.some((f) => c.path.endsWith(f)),
-      );
-      setChanges(result);
-      isGitRepoRef.current = true;
-      try {
-        const branch = await fetchGitBranch(cwd);
-        setBranchName(branch);
-      } catch {
-        // Branch name unavailable, keep default
-      }
-    } catch {
-      setChanges([]);
-      isGitRepoRef.current = false;
-    }
-    setIsLoading(false);
-  }, [getEffectiveCwd, setChanges, setIsLoading]);
-
   const loadFileDiff = useCallback(
     async (filePath: string) => {
       const cwd = getEffectiveCwd();
@@ -64,6 +38,42 @@ export function useGitPolling() {
     },
     [getEffectiveCwd, setFileDiff],
   );
+
+  const loadStatus = useCallback(async () => {
+    const cwd = getEffectiveCwd();
+    if (!cwd) {
+      setChanges([]);
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const prevPaths = new Set(useDiffStore.getState().changes.map((c) => c.path));
+      const result = (await fetchGitStatus(cwd)).filter(
+        (c) => !IGNORED_FILES.some((f) => c.path.endsWith(f)),
+      );
+      setChanges(result);
+      isGitRepoRef.current = true;
+
+      // Load diffs for newly auto-expanded files
+      const { fileDiffs, expandedFiles } = useDiffStore.getState();
+      for (const c of result) {
+        if (!prevPaths.has(c.path) && expandedFiles.has(c.path) && !fileDiffs.has(c.path)) {
+          loadFileDiff(c.path);
+        }
+      }
+
+      try {
+        const branch = await fetchGitBranch(cwd);
+        setBranchName(branch);
+      } catch {
+        // Branch name unavailable, keep default
+      }
+    } catch {
+      setChanges([]);
+      isGitRepoRef.current = false;
+    }
+    setIsLoading(false);
+  }, [getEffectiveCwd, setChanges, setIsLoading, loadFileDiff]);
 
   // Load on mount and poll every 5s
   useEffect(() => {

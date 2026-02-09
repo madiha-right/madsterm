@@ -135,6 +135,8 @@ export const TerminalPanel: React.FC = () => {
     const isMac = navigator.platform.includes("Mac");
     const handler = (e: KeyboardEvent) => {
       const meta = isMac ? e.metaKey : e.ctrlKey;
+      // Skip if Ctrl is also held on macOS (Cmd+Ctrl+F = fullscreen toggle)
+      if (isMac && e.ctrlKey) return;
       if (meta && !e.shiftKey && !e.altKey && e.key.toLowerCase() === "f") {
         e.preventDefault();
         setSearchVisible(true);
