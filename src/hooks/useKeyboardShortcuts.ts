@@ -94,7 +94,16 @@ export function useKeyboardShortcuts(
       // Cmd+B -> toggle file explorer
       if (!e.shiftKey && !e.altKey && e.key === "b") {
         e.preventDefault();
-        toggleLeftPanel();
+        const state = usePanelStore.getState();
+        if (state.leftPanelVisible) {
+          if (state.focusedPanel !== "explorer") {
+            usePanelStore.getState().setFocusedPanel("explorer");
+          } else {
+            toggleLeftPanel();
+          }
+        } else {
+          toggleLeftPanel();
+        }
         setIsSearching(false);
         return;
       }
@@ -102,11 +111,16 @@ export function useKeyboardShortcuts(
       // Cmd+Shift+E -> toggle file explorer (alias)
       if (e.shiftKey && !e.altKey && (e.key === "E" || e.key === "e")) {
         e.preventDefault();
-        if (usePanelStore.getState().leftPanelVisible) {
-          // Panel already open — if searching, switch to explorer mode; otherwise close
+        const state = usePanelStore.getState();
+        if (state.leftPanelVisible) {
           if (useFileExplorerStore.getState().isSearching) {
+            // In search mode — switch to explorer mode
             setIsSearching(false);
+          } else if (state.focusedPanel !== "explorer") {
+            // Panel open but not focused — just move focus
+            usePanelStore.getState().setFocusedPanel("explorer");
           } else {
+            // Panel open and focused — close it
             toggleLeftPanel();
           }
         } else {
@@ -150,7 +164,18 @@ export function useKeyboardShortcuts(
       // Cmd+Shift+= (plus) -> toggle diff/changes panel
       if (e.shiftKey && !e.altKey && (e.key === "+" || e.key === "=")) {
         e.preventDefault();
-        toggleRightPanel();
+        const state = usePanelStore.getState();
+        if (state.rightPanelVisible) {
+          if (state.focusedPanel !== "diff") {
+            // Panel open but not focused — just move focus
+            usePanelStore.getState().setFocusedPanel("diff");
+          } else {
+            // Panel open and focused — close it
+            toggleRightPanel();
+          }
+        } else {
+          toggleRightPanel();
+        }
         return;
       }
 

@@ -17,6 +17,8 @@ import swift from "highlight.js/lib/languages/swift";
 import typescript from "highlight.js/lib/languages/typescript";
 import xml from "highlight.js/lib/languages/xml";
 import yaml from "highlight.js/lib/languages/yaml";
+// @ts-expect-error -- no type declarations for this CJS module
+import { solidity } from "highlightjs-solidity";
 
 hljs.registerLanguage("bash", bash);
 hljs.registerLanguage("c", c);
@@ -36,6 +38,7 @@ hljs.registerLanguage("swift", swift);
 hljs.registerLanguage("typescript", typescript);
 hljs.registerLanguage("xml", xml);
 hljs.registerLanguage("yaml", yaml);
+hljs.registerLanguage("solidity", solidity);
 
 const EXT_MAP: Record<string, string> = {
   ".js": "javascript",
@@ -75,6 +78,7 @@ const EXT_MAP: Record<string, string> = {
   ".md": "markdown",
   ".mdx": "markdown",
   ".sql": "sql",
+  ".sol": "solidity",
 };
 
 export function detectLanguage(filePath: string): string | undefined {
