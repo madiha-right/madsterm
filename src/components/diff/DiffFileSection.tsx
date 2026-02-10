@@ -171,7 +171,20 @@ export const DiffFileSection: React.FC<{
       {isExpanded && (
         <div>
           {diff ? (
-            <DiffViewer diff={diff} />
+            diff.hunks.length > 0 ? (
+              <DiffViewer diff={diff} />
+            ) : (
+              <div
+                style={{
+                  padding: "12px",
+                  color: theme.textMuted,
+                  fontSize: 11,
+                  textAlign: "center",
+                }}
+              >
+                No changes
+              </div>
+            )
           ) : (
             <div
               style={{

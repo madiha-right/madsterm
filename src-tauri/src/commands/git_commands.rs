@@ -181,6 +181,9 @@ pub fn git_diff(cwd: String, file_path: Option<String>) -> Result<Vec<FileDiff>,
     let repo = Repository::discover(&cwd)?;
     let mut diff_opts = DiffOptions::new();
     diff_opts.context_lines(3);
+    diff_opts.include_untracked(true);
+    diff_opts.recurse_untracked_dirs(true);
+    diff_opts.show_untracked_content(true);
 
     if let Some(ref fp) = file_path {
         diff_opts.pathspec(fp);

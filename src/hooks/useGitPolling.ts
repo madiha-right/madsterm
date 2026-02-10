@@ -31,9 +31,15 @@ export function useGitPolling() {
         const diffs = await fetchGitDiff(cwd, filePath);
         if (diffs.length > 0) {
           setFileDiff(filePath, diffs[0]);
+        } else {
+          setFileDiff(filePath, {
+            path: filePath,
+            hunks: [],
+            is_binary: false,
+          });
         }
       } catch {
-        // Diff load failed, silently ignore
+        setFileDiff(filePath, { path: filePath, hunks: [], is_binary: false });
       }
     },
     [getEffectiveCwd, setFileDiff],
